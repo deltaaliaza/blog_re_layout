@@ -773,20 +773,22 @@
     .btn-link-icon { font-size: 0.92rem; }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation: none !important;
-        transition: none !important;
-        scroll-behavior: auto !important;
+    *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
       }
-    .card,
-    .modal-overlay,
-    .modal-dialog {
+
+    .card {
+    animation: none !important;
     opacity: 1 !important;
     transform: none !important;
       }
+
     .card-img {
     transform: none !important;
       }
+}
     }
   </style>
 </head>
