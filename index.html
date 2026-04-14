@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="國立陽明交通大學圖書館 AI 學習資源導覽，為大學新生精選 AI 工具與學術資源文章。" />
+  <title>NYCU 圖書館 × AI 學習資源導覽</title>
+
+  <!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  NYCU 圖書館 BLOG 文章彙整展示頁                                      ║
+  ║  版本：1.1.0                                                         ║
+  ║                                                                      ║
+  ║  【架構說明】                                                         ║
+  ║  本頁為單一 HTML 檔案，CSS 與 JavaScript 皆整合於此。                   ║
+  ║  文章資料由外部 JSON 檔案（articles.json）提供，                        ║
+  ║  前端以 fetch() 動態載入並渲染，未來更新資料只需修改 JSON。              ║
+  ║                                                                      ║
+  ║  【目錄結構（建議）】                                                   ║
+  ║  project/                                                            ║
+  ║  ├── index.html          ← 本檔案                                     ║
+  ║  └── data/                                                           ║
+  ║      └── articles.json   ← 文章資料                                   ║
+  ║                                                                      ║
+  ║  【GitHub Pages 部署方式】                                             ║
+  ║  修改下方 CONFIG.DATA_URL 為 jsDelivr 或 GitHub Raw URL，              ║
+  ║  push 後即可自動更新。                                                 ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+  -->
+
+  <!-- Google Fonts：標題用 Noto Serif TC（知識感）、內文用 Noto Sans TC（易讀性） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* ────────────────────────────────────────────────────────────────
+       §1  Design Tokens（設計變數）
+       所有顏色、字型、間距皆集中於此，修改這裡即可統一調整風格。
+       ──────────────────────────────────────────────────────────────── */
+    :root {
+      /* 色盤：深森綠 × 暖米白 × 琥珀金 */
+      --c-bg:            #f6f4ef;   /* 頁面背景 */
+      --c-surface:       #ffffff;   /* 卡片 / 對話框 */
+      --c-primary:       #1b3d2f;   /* 主色（深森綠） */
+      --c-primary-mid:   #2a5c43;   /* 中深綠（hover） */
+      --c-accent:        #b5872a;   /* 強調色（琥珀金） */
+      --c-accent-bg:     #f5ead7;   /* 精選標籤底色 */
+      --c-text:          #1a1a1a;   /* 主文字 */
+      --c-text-sub:      #555555;   /* 次要文字 */
+      --c-text-faint:    #999999;   /* 淡色文字 */
+      --c-border:        #e2dfd8;   /* 邊框 */
+      --c-tag-bg:        #edf2ee;   /* 一般 tag 底色 */
+      --c-tag-text:      #2a5c43;   /* 一般 tag 文字 */
+      --c-overlay:       rgba(8, 22, 14, 0.56); /* modal 遮罩 */
+      --c-input-focus:   rgba(27, 61, 47, 0.25); /* 搜尋框 focus ring */
+
+      /* 字型 */
+      --f-heading: 'Noto Serif TC', 'Georgia', serif;
+      --f-body:    'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+
+      /* 圓角 */
+      --r-sm:    6px;
+      --r-md:   12px;
+      --r-lg:   16px;
+      --r-pill: 999px;
+
+      /* 陰影 */
+      --sh-card:  0 2px 10px rgba(27, 61, 47, 0.07);
+      --sh-hover: 0 8px 28px rgba(27, 61, 47, 0.15);
+      --sh-modal: 0 24px 64px rgba(0, 0, 0, 0.28);
+
+      /* 動畫時間 */
+      --t-fast:   0.18s;
+      --t-base:   0.24s;
+      --t-modal:  0.3s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       §2  CSS Reset & 基礎設定
+       ──────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--f-body);
+      background: var(--c-bg);
+      color: var(--c-text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* 防止 modal 開啟時背景捲動 */
+    body.no-scroll { overflow: hidden; }
+
+    /* ────────────────────────────────────────────────────────────────
+       §3  Header
+       ──────────────────────────────────────────────────────────────── */
+    .site-header {
+      background: var(--c-primary);
+      color: #fff;
+      padding: 48px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* 裝飾性光暈 */
+    .site-header::before,
+    .site-header::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .site-header::before {
+      width: 240px; height: 240px;
+      top: -80px; right: -60px;
+      background: rgba(255,255,255,0.04);
+    }
+    .site-header::after {
+      width: 180px; height: 180px;
+      bottom: -60px; left: -50px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .header-kicker {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 10px;
+    }
+    .header-title {
+      font-family: var(--f-heading);
+      font-size: clamp(1.45rem, 4.5vw, 2.2rem);
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+      margin-bottom: 10px;
+    }
+    .header-sub {
+      font-size: 0.92rem;
+      color: rgba(255,255,255,0.68);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    /* 金色底線裝飾 */
+    .header-rule {
+      width: 44px; height: 3px;
+      background: var(--c-accent);
+      border-radius: 2px;
+      margin: 18px auto 0;
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       §4  Toolbar（搜尋列 + 分類篩選 + 計數）
+       【擴充點】搜尋與篩選邏輯均集中於此區域，未來擴充不需動其他結構。
+       ──────────────────────────────────────────────────────────────── */
+    .toolbar {
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    @media (min-width: 768px) {
+      .toolbar { flex-direction: row; align-items: center; padding: 10px 28px; }
+    }
+
+    /* ── 搜尋輸入框（預留，初始為可選顯示） ── */
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 360px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--c-text-faint);
+      font-size: 0.95rem;
+      pointer-events: none;
+      line-height: 1;
+    }
+    .search-input {
+      width: 100%;
+      padding: 8px 12px 8px 36px;
+      border: 1.5px solid var(--c-border);
+      border-radius: var(--r-pill);
+      font-size: 0.85rem;
+      font-family: var(--f-body);
+      color: var(--c-text);
+      background: var(--c-bg);
+      outline: none;
+      transition: border-color var(--t-base), box-shadow var(--t-base);
+    }
+    .search-input::placeholder { color: var(--c-text-faint); }
+    .search-input:focus {
+      border-color: var(--c-primary-mid);
+      box-shadow: 0 0 0 3px var(--c-input-focus);
+    }
+
+    /* ── 分類篩選按鈕群 ── */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    .filter-label {
+      font-size: 0.76rem;
+      color: var(--c-text-faint);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    .filter-btn {
+      padding: 4px 12px;
+      border-radius: var(--r-pill);
+      border: 1.5px solid var(--c-border);
+      font-size: 0.78rem;
+      font-family: var(--f-body);
+      color: var(--c-text-sub);
+      background: transparent;
+      transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+      white-space: nowrap;
+      line-height: 1.6;
+    }
+    .filter-btn:hover {
+      border-color: var(--c-primary-mid);
+      color: var(--c-primary);
+    }
+    .filter-btn[aria-pressed="true"] {
+      background: var(--c-primary);
+      border-color: var(--c-primary);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* ── 文章計數 ── */
+    .count-badge {
+      font-size: 0.78rem;
+      color: var(--c-text-faint);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .count-badge strong { color: var(--c-primary); font-weight: 600; }
+
+    /* ────────────────────────────────────────────────────────────────
+       §5  主要內容區 & 卡片格線（Mobile-first RWD）
+       ──────────────────────────────────────────────────────────────── */
+    .page-body {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+    @media (min-width: 640px) { .page-body { padding: 36px 24px 72px; } }
+    @media (min-width: 1024px) { .page-body { padding: 40px 32px 80px; } }
+
+    /* 格線：1欄 → 2欄 → 3欄 */
+    .articles-grid {
+      display: grid;
+      grid-template-columns: 1fr;                  /* 手機：1 欄 */
+      gap: 20px;
+    }
+    @media (min-width: 600px) {
+      .articles-grid { grid-template-columns: repeat(2, 1fr); } /* 平板：2 欄 */
+    }
+    @media (min-width: 960px) {
+      .articles-grid {
+        grid-template-columns: repeat(3, 1fr);     /* 桌機：3 欄 */
+        gap: 24px;
+      }
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       §6  文章卡片
+       ──────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--sh-card);
+      transition: transform var(--t-base), box-shadow var(--t-base);
+      /* 進場動畫：JS 設定 --delay 做錯開效果 */
+      opacity: 0;
+      transform: translateY(14px);
+      animation: fadeUp 0.42s ease forwards;
+      animation-delay: var(--delay, 0ms);
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--sh-hover);
+    }
+    .card:focus-visible {
+      outline: 3px solid var(--c-accent);
+      outline-offset: 3px;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── 封面圖：固定 16:9 比例 ── */
+    .card-img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: var(--c-tag-bg);
+      flex-shrink: 0;
+    }
+    .card-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .card:hover .card-img { transform: scale(1.05); }
+
+    /* 精選徽章（圖片左上角） */
+    .badge-featured {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: var(--c-accent);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: var(--r-sm);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* 主題分類標籤（圖片右下角） */
+    .badge-cluster {
+      position: absolute;
+      bottom: 8px; right: 8px;
+      background: rgba(27, 61, 47, 0.82);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: var(--r-sm);
+    }
+
+    /* ── 卡片文字區 ── */
+    .card-body {
+      padding: 16px 18px 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-date {
+      font-size: 0.72rem;
+      color: var(--c-text-faint);
+      letter-spacing: 0.04em;
+    }
+    .card-title {
+      font-family: var(--f-heading);
+      font-size: 0.98rem;
+      font-weight: 700;
+      line-height: 1.45;
+      color: var(--c-text);
+      /* 最多顯示 2 行，超出截斷 */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-summary {
+      font-size: 0.84rem;
+      color: var(--c-text-sub);
+      line-height: 1.65;
+      flex: 1;
+      /* 最多顯示 3 行，超出截斷 */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── 卡片底部 ── */
+    .card-footer {
+      padding: 10px 18px 14px;
+      border-top: 1px solid var(--c-border);
+    }
+    .card-cta {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--c-primary-mid);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: gap var(--t-fast), color var(--t-fast);
+    }
+    .card:hover .card-cta {
+      color: var(--c-accent);
+      gap: 8px;
+    }
+    .card-cta-arrow { font-size: 0.9rem; }
+
+    /* ────────────────────────────────────────────────────────────────
+       §7  狀態元件（Loading / Error / Empty）
+       ──────────────────────────────────────────────────────────────── */
+    .state-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 260px;
+      padding: 48px 24px;
+      gap: 14px;
+      text-align: center;
+    }
+    .state-icon { font-size: 2.4rem; line-height: 1; }
+    .state-title {
+      font-family: var(--f-heading);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--c-text);
+    }
+    .state-desc {
+      font-size: 0.875rem;
+      color: var(--c-text-sub);
+      max-width: 340px;
+      line-height: 1.65;
+    }
+
+    /* 旋轉圓圈（loading 動畫） */
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid var(--c-border);
+      border-top-color: var(--c-primary);
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 重試按鈕 */
+    .btn-retry {
+      margin-top: 4px;
+      padding: 8px 24px;
+      background: var(--c-primary);
+      color: #fff;
+      border-radius: var(--r-sm);
+      font-size: 0.88rem;
+      font-family: var(--f-body);
+      font-weight: 500;
+      transition: background var(--t-fast);
+    }
+    .btn-retry:hover { background: var(--c-primary-mid); }
+
+    /* ────────────────────────────────────────────────────────────────
+       §8  Modal（對話框）
+       手機：從底部滑上（bottom sheet）
+       平板以上：置中彈出
+       ──────────────────────────────────────────────────────────────── */
+
+    /* 遮罩層 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--c-overlay);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      z-index: 500;
+      display: flex;
+      align-items: flex-end;     /* 手機：底部對齊 */
+      justify-content: center;
+      /* 初始狀態：隱藏 */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--t-modal);
+    }
+    @media (min-width: 640px) {
+      .modal-overlay {
+        align-items: center;     /* 平板以上：垂直置中 */
+        padding: 24px;
+      }
+    }
+
+    /* 開啟狀態 */
+    .modal-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 對話框主體 */
+    .modal-dialog {
+      background: var(--c-surface);
+      width: 100%;
+      max-width: 660px;
+      border-radius: var(--r-lg) var(--r-lg) 0 0;  /* 手機：上方圓角 */
+      max-height: 90vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: var(--sh-modal);
+      position: relative;
+      /* 動畫：手機從下滑入 */
+      transform: translateY(40px);
+      transition: transform var(--t-modal);
+    }
+    @media (min-width: 640px) {
+      .modal-dialog {
+        border-radius: var(--r-lg);               /* 平板以上：四邊圓角 */
+        transform: translateY(16px) scale(0.97);  /* 從下方淡縮入 */
+        max-height: 86vh;
+      }
+    }
+    .modal-overlay.is-open .modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+
+    /* 手機拖曳提示線 */
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--c-border);
+      border-radius: 2px;
+      margin: 10px auto 2px;
+    }
+    @media (min-width: 640px) { .modal-handle { display: none; } }
+
+    /* ── 關閉按鈕（浮在圖片上） ── */
+    .btn-close {
+      position: absolute;
+      top: 12px; right: 12px;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      color: var(--c-text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+      transition: background var(--t-fast), transform var(--t-fast);
+      z-index: 10;
+      line-height: 1;
+    }
+    .btn-close:hover { background: #fff; transform: scale(1.08); }
+
+    /* ── Modal 封面圖 ── */
+    .modal-img-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: var(--c-tag-bg);
+      flex-shrink: 0;
+    }
+    .modal-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    /* ── Modal 內文 ── */
+    .modal-body { padding: 20px 22px 32px; }
+
+    /* 日期 + 精選 + 分類（同一行） */
+    .modal-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .modal-date {
+      font-size: 0.76rem;
+      color: var(--c-text-faint);
+      letter-spacing: 0.04em;
+    }
+    /* Modal 精選標籤 */
+    .modal-feat-badge {
+      background: var(--c-accent-bg);
+      color: var(--c-accent);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: var(--r-sm);
+      letter-spacing: 0.05em;
+    }
+    /* Modal 分類標籤 */
+    .modal-cluster {
+      background: var(--c-tag-bg);
+      color: var(--c-tag-text);
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 2px 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(42, 92, 67, 0.2);
+    }
+
+    /* Modal 標題 */
+    .modal-title {
+      font-family: var(--f-heading);
+      font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+      font-weight: 700;
+      line-height: 1.42;
+      margin-bottom: 16px;
+      color: var(--c-text);
+    }
+
+    /* 小節標題 */
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--c-text-faint);
+      margin-bottom: 8px;
+    }
+
+    /* 導讀摘要（左側金色豎線） */
+    .modal-summary {
+      font-size: 0.895rem;
+      line-height: 1.82;
+      color: var(--c-text-sub);
+      border-left: 3px solid var(--c-accent);
+      padding-left: 14px;
+      margin-bottom: 18px;
+    }
+
+    /* 適合對象 */
+    .modal-audience {
+      font-size: 0.82rem;
+      color: var(--c-text-sub);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .modal-audience strong { color: var(--c-primary); font-weight: 600; }
+
+    /* Tags */
+    .tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .tag {
+      background: var(--c-tag-bg);
+      color: var(--c-tag-text);
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(42, 92, 67, 0.15);
+    }
+
+    /* 全文連結按鈕 */
+    .btn-readmore {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--c-primary);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: var(--r-sm);
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: var(--f-body);
+      transition: background var(--t-fast), transform var(--t-fast);
+      text-decoration: none;
+    }
+    .btn-readmore:hover {
+      background: var(--c-primary-mid);
+      transform: translateX(2px);
+    }
+    .btn-readmore-icon { font-size: 0.85rem; }
+
+    /* ────────────────────────────────────────────────────────────────
+       §9  頁腳
+       ──────────────────────────────────────────────────────────────── */
+    .site-footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--c-border);
+      font-size: 0.76rem;
+      color: var(--c-text-faint);
+      line-height: 2;
+    }
+    .site-footer a {
+      color: var(--c-primary-mid);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       §10  無障礙輔助
+       ──────────────────────────────────────────────────────────────── */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+    }
+    /* 顯示 / 隱藏用（JS 控制） */
+    .hidden { display: none !important; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════════════
+       HEADER
+       ════════════════════════════════════════════════ -->
+  <header class="site-header" role="banner">
+    <p class="header-kicker">國立陽明交通大學圖書館</p>
+    <h1 class="header-title">AI 學習資源導覽</h1>
+    <p class="header-sub">
+      為大學新生精選 AI 工具與學術資源文章，<br />
+      快速掌握圖書館的數位學習資源。
+    </p>
+    <div class="header-rule" aria-hidden="true"></div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════
+       TOOLBAR（搜尋 + 分類篩選 + 計數）
+       ════════════════════════════════════════════════ -->
+  <div class="toolbar" role="search" aria-label="文章搜尋與分類篩選">
+
+    <!-- ── 搜尋框（預留擴充用，預設顯示） ── -->
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input
+        class="search-input"
+        id="search-input"
+        type="search"
+        placeholder="搜尋文章標題或關鍵字…"
+        aria-label="搜尋文章"
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- ── 分類篩選按鈕群（JS 動態生成） ── -->
+    <div class="filter-row" id="filter-row" role="group" aria-label="依主題分類篩選">
+      <span class="filter-label">分類：</span>
+      <!-- 篩選按鈕由 JS 根據 JSON 實際 topicCluster 值動態插入 -->
+    </div>
+
+    <!-- ── 文章計數（JS 動態更新） ── -->
+    <p class="count-badge" id="count-badge" aria-live="polite" aria-atomic="true"></p>
+
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════
+       MAIN
+       ════════════════════════════════════════════════ -->
+  <main class="page-body" role="main">
+
+    <!-- §A 載入中狀態 -->
+    <div class="state-box" id="state-loading" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="state-title">正在載入文章資料…</p>
+      <p class="state-desc">請稍候，前端正在讀取文章 JSON。</p>
+    </div>
+
+    <!-- §B 錯誤狀態 -->
+    <div class="state-box hidden" id="state-error" role="alert">
+      <span class="state-icon" aria-hidden="true">⚠️</span>
+      <p class="state-title">無法載入文章資料</p>
+      <p class="state-desc" id="error-detail">請確認 JSON 路徑是否正確，或稍後再試。</p>
+      <button class="btn-retry" id="btn-retry">重新載入</button>
+    </div>
+
+    <!-- §C 空資料狀態 -->
+    <div class="state-box hidden" id="state-empty">
+      <span class="state-icon" aria-hidden="true">📭</span>
+      <p class="state-title">找不到符合條件的文章</p>
+      <p class="state-desc">請嘗試選擇其他分類，或清除搜尋關鍵字。</p>
+    </div>
+
+    <!-- §D 文章卡片格線（JS 動態填入卡片） -->
+    <div
+      class="articles-grid hidden"
+      id="articles-grid"
+      role="list"
+      aria-label="文章列表"
+    ></div>
+
+  </main>
+
+
+  <!-- ════════════════════════════════════════════════
+       MODAL（JS 動態填充內容）
+       ════════════════════════════════════════════════ -->
+  <div
+    class="modal-overlay"
+    id="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title-el"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog" id="modal-dialog" tabindex="-1">
+
+      <!-- 手機拖曳提示線 -->
+      <div class="modal-handle" aria-hidden="true"></div>
+
+      <!-- 關閉按鈕 -->
+      <button class="btn-close" id="btn-close" aria-label="關閉對話框">✕</button>
+
+      <!-- 封面圖 -->
+      <div class="modal-img-wrap">
+        <img class="modal-img" id="modal-img" src="" alt="" loading="lazy" />
+      </div>
+
+      <!-- 內文 -->
+      <div class="modal-body">
+
+        <!-- 日期 + 精選 + 分類 -->
+        <div class="modal-meta">
+          <time class="modal-date" id="modal-date"></time>
+          <span class="modal-feat-badge hidden" id="modal-feat-badge">★ 精選文章</span>
+          <span class="modal-cluster" id="modal-cluster"></span>
+        </div>
+
+        <!-- 標題 -->
+        <h2 class="modal-title" id="modal-title-el"></h2>
+
+        <!-- 導讀摘要 -->
+        <p class="section-label">文章導讀</p>
+        <p class="modal-summary" id="modal-summary"></p>
+
+        <!-- 適合對象 -->
+        <p class="modal-audience" id="modal-audience"></p>
+
+        <!-- Tags -->
+        <p class="section-label">相關主題</p>
+        <div class="tags-wrap" id="modal-tags"></div>
+
+        <!-- 全文連結按鈕 -->
+        <a
+          class="btn-readmore"
+          id="modal-link"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          前往閱讀全文
+          <span class="btn-readmore-icon" aria-hidden="true">↗</span>
+        </a>
+
+      </div><!-- /.modal-body -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal-overlay -->
+
+
+  <!-- ════════════════════════════════════════════════
+       FOOTER
+       ════════════════════════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <p>
+      資料來源：<a href="https://news.lib.nycu.edu.tw/" target="_blank" rel="noopener noreferrer">國立陽明交通大學圖書館 BLOG</a>
+    </p>
+    <p>本頁文章由圖書館數位服務組整理維護，僅供學術導覽使用。</p>
+  </footer>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       JavaScript 主程式
+
+       【程式結構索引】
+         CONFIG      — 全域設定，只需修改這裡
+         State       — 應用程式狀態物件
+         DOM         — DOM 元素快取
+         Utils       — 工具函式（日期格式化、HTML跳脫）
+         UI helpers  — 顯示/隱藏各狀態
+         loadData()  — fetch JSON，初始化資料
+         buildFilters()  — 動態建立篩選按鈕
+         applyFilters()  — 套用分類 + 搜尋篩選
+         renderGrid()    — 渲染卡片格線
+         createCard()    — 建立單張卡片元素
+         openModal()     — 開啟並填充 Modal
+         closeModal()    — 關閉 Modal
+         Event bindings  — 事件監聽
+         App init        — 啟動入口
+       ════════════════════════════════════════════════════════════════ -->
+  <script>
+    'use strict';
+
+    /* ──────────────────────────────────────────────────────
+       ★ CONFIG（全域設定）
+       ── 未來只需修改這個物件 ──
+
+       DATA_URL 範例：
+         本機測試：      './data/articles.json'
+         GitHub Raw：    'https://raw.githubusercontent.com/帳號/repo/main/data/articles.json'
+         jsDelivr CDN：  'https://cdn.jsdelivr.net/gh/帳號/repo@main/data/articles.json'
+                         （推薦正式環境使用，CDN 有快取加速且穩定）
+       ────────────────────────────────────────────────────── */
+    const CONFIG = {
+      DATA_URL: './data/articles.json',
+
+      /** 圖片 fallback：無 imageUrl 時顯示的預設圖 */
+      FALLBACK_IMG: 'https://placehold.co/800x450/edf2ee/2a5c43?text=NYCU+Library',
+
+      /** topicCluster 順序（決定篩選按鈕排序） */
+      CLUSTER_ORDER: ['AI研究工具', '學術資源', '研究方法', '圖書館服務', '其他'],
+    };
+
+
+    /* ──────────────────────────────────────────────────────
+       State（應用程式狀態）
+       ────────────────────────────────────────────────────── */
+    const State = {
+      allArticles:      [],    // 全部 display=true 的文章（已排序）
+      filteredArticles: [],    // 篩選後的文章
+      activeCluster:    '全部', // 當前分類篩選
+      searchKeyword:    '',    // 當前搜尋關鍵字
+    };
+
+
+    /* ──────────────────────────────────────────────────────
+       DOM（元素快取）
+       ────────────────────────────────────────────────────── */
+    const DOM = {
+      searchInput:  document.getElementById('search-input'),
+      filterRow:    document.getElementById('filter-row'),
+      countBadge:   document.getElementById('count-badge'),
+      articlesGrid: document.getElementById('articles-grid'),
+      stateLoading: document.getElementById('state-loading'),
+      stateError:   document.getElementById('state-error'),
+      stateEmpty:   document.getElementById('state-empty'),
+      errorDetail:  document.getElementById('error-detail'),
+      btnRetry:     document.getElementById('btn-retry'),
+      /* Modal */
+      modalOverlay: document.getElementById('modal-overlay'),
+      modalDialog:  document.getElementById('modal-dialog'),
+      btnClose:     document.getElementById('btn-close'),
+      modalImg:     document.getElementById('modal-img'),
+      modalDate:    document.getElementById('modal-date'),
+      modalFeat:    document.getElementById('modal-feat-badge'),
+      modalCluster: document.getElementById('modal-cluster'),
+      modalTitle:   document.getElementById('modal-title-el'),
+      modalSummary: document.getElementById('modal-summary'),
+      modalAud:     document.getElementById('modal-audience'),
+      modalTags:    document.getElementById('modal-tags'),
+      modalLink:    document.getElementById('modal-link'),
+    };
+
+
+    /* ──────────────────────────────────────────────────────
+       Utils（工具函式）
+       ────────────────────────────────────────────────────── */
+
+    /**
+     * 將 YYYY-MM-DD 格式化為中文日期
+     * @param {string} dateStr
+     * @returns {string}
+     */
+    function fmtDate(dateStr) {
+      if (!dateStr) return '日期不詳';
+      const [y, m, d] = dateStr.split('-');
+      return `${y} 年 ${parseInt(m)} 月 ${parseInt(d)} 日`;
+    }
+
+    /**
+     * HTML 跳脫：防止 XSS（在使用 innerHTML 前呼叫）
+     * @param {*} val
+     * @returns {string}
+     */
+    function esc(val) {
+      if (val == null) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /**
+     * 切換 `hidden` class 的小工具
+     * @param {HTMLElement} el
+     * @param {boolean} isHidden
+     */
+    function setHidden(el, isHidden) {
+      el.classList.toggle('hidden', isHidden);
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       UI 狀態切換
+       showState('loading' | 'error' | 'empty' | 'grid')
+       ────────────────────────────────────────────────────── */
+    function showState(which) {
+      setHidden(DOM.stateLoading, which !== 'loading');
+      setHidden(DOM.stateError,   which !== 'error');
+      setHidden(DOM.stateEmpty,   which !== 'empty');
+      setHidden(DOM.articlesGrid, which !== 'grid');
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       loadData()
+       以 fetch() 載入 JSON，初始化 State.allArticles
+       ────────────────────────────────────────────────────── */
+    async function loadData() {
+      showState('loading');
+
+      try {
+        const res = await fetch(CONFIG.DATA_URL, {
+          cache: 'no-cache',  // 避免瀏覽器快取舊版 JSON
+        });
+
+        /* 檢查 HTTP 狀態 */
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}：${res.statusText}`);
+        }
+
+        const json = await res.json();
+
+        /* 基本格式驗證 */
+        if (!json || !Array.isArray(json.articles)) {
+          throw new Error('JSON 格式錯誤，找不到 articles 陣列。');
+        }
+
+        /*
+         * 排序規則：
+         *   1. featured=true 優先
+         *   2. 同類下依 postDate 由新到舊
+         */
+        State.allArticles = json.articles
+          .filter(a => a.display === true)           // 只取 display=true
+          .sort((a, b) => {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return (b.postDate || '').localeCompare(a.postDate || '');
+          });
+
+        /* 初始化篩選按鈕 */
+        buildFilters();
+
+        /* 初始渲染（無篩選） */
+        applyFilters();
+
+      } catch (err) {
+        /* 顯示錯誤狀態，讓使用者看到詳細錯誤訊息 */
+        console.error('[NYCU Lib] 載入失敗：', err);
+        DOM.errorDetail.textContent = `錯誤詳情：${err.message}`;
+        showState('error');
+      }
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       buildFilters()
+       根據 State.allArticles 實際出現的 topicCluster，
+       動態建立篩選按鈕（含「全部」）
+       ────────────────────────────────────────────────────── */
+    function buildFilters() {
+      /* 找出資料中實際存在的分類，保持 CONFIG.CLUSTER_ORDER 定義的排序 */
+      const usedClusters = CONFIG.CLUSTER_ORDER.filter(c =>
+        State.allArticles.some(a => a.topicCluster === c)
+      );
+
+      /* 清除舊按鈕（保留「分類：」標籤文字） */
+      DOM.filterRow.querySelectorAll('.filter-btn').forEach(b => b.remove());
+
+      /* 建立「全部」+ 各分類按鈕 */
+      ['全部', ...usedClusters].forEach(cluster => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.textContent = cluster;
+        btn.setAttribute('aria-pressed', cluster === '全部' ? 'true' : 'false');
+        btn.dataset.cluster = cluster;
+        btn.addEventListener('click', () => {
+          State.activeCluster = cluster;
+          applyFilters();
+        });
+        DOM.filterRow.appendChild(btn);
+      });
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       applyFilters()
+       結合「分類篩選」與「關鍵字搜尋」更新顯示結果
+
+       【擴充點】
+       未來如需加入進階篩選（audience、日期範圍等），
+       只需在此函式中增加 .filter() 條件即可，
+       不必修改卡片渲染或 modal 邏輯。
+       ────────────────────────────────────────────────────── */
+    function applyFilters() {
+      const cluster = State.activeCluster;
+      const kw = State.searchKeyword.trim().toLowerCase();
+
+      /* 更新篩選按鈕 active 狀態 */
+      DOM.filterRow.querySelectorAll('.filter-btn').forEach(btn => {
+        const isActive = btn.dataset.cluster === cluster;
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+
+      /* 步驟1：分類篩選 */
+      let result = cluster === '全部'
+        ? [...State.allArticles]
+        : State.allArticles.filter(a => a.topicCluster === cluster);
+
+      /* 步驟2：關鍵字搜尋（比對 title / shortSummary / tags） */
+      if (kw) {
+        result = result.filter(a => {
+          const inTitle   = (a.title || '').toLowerCase().includes(kw);
+          const inSummary = (a.shortSummary || '').toLowerCase().includes(kw);
+          const inTags    = (a.tags || []).some(t => t.toLowerCase().includes(kw));
+          return inTitle || inSummary || inTags;
+        });
+      }
+
+      State.filteredArticles = result;
+
+      /* 更新計數 */
+      DOM.countBadge.innerHTML = `共 <strong>${result.length}</strong> 篇`;
+
+      /* 渲染卡片或空狀態 */
+      if (result.length === 0) {
+        showState('empty');
+      } else {
+        renderGrid(result);
+        showState('grid');
+      }
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       renderGrid(articles)
+       將文章陣列渲染成卡片格線
+       ────────────────────────────────────────────────────── */
+    function renderGrid(articles) {
+      /* 用 DocumentFragment 一次性插入，減少 DOM reflow */
+      const frag = document.createDocumentFragment();
+      articles.forEach((article, idx) => {
+        frag.appendChild(createCard(article, idx));
+      });
+      DOM.articlesGrid.innerHTML = '';
+      DOM.articlesGrid.appendChild(frag);
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       createCard(article, index)
+       建立並回傳單張卡片的 HTMLElement
+
+       【注意】innerHTML 內的動態值皆已通過 esc() 跳脫，
+       onerror 屬性也只使用 CONFIG 常數，不含使用者輸入。
+       ────────────────────────────────────────────────────── */
+    function createCard(article, idx) {
+      const imgSrc  = article.imageUrl || CONFIG.FALLBACK_IMG;
+      const date    = fmtDate(article.postDate);
+      const cluster = article.topicCluster || '其他';
+
+      const el = document.createElement('article');
+      el.className = 'card';
+      el.setAttribute('role', 'listitem');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', `文章：${esc(article.title)}`);
+      /* 錯開進場動畫，每張卡片延遲 55ms */
+      el.style.setProperty('--delay', `${idx * 55}ms`);
+
+      el.innerHTML = `
+        <!-- 封面圖（16:9） -->
+        <div class="card-img-wrap">
+          <img
+            class="card-img"
+            src="${esc(imgSrc)}"
+            alt="${esc(article.title)} 封面圖"
+            loading="lazy"
+            onerror="this.src='${CONFIG.FALLBACK_IMG}'"
+          />
+          ${article.featured
+            ? `<span class="badge-featured" aria-label="精選文章">★ 精選</span>`
+            : ''}
+          <span class="badge-cluster" aria-label="分類：${esc(cluster)}">${esc(cluster)}</span>
+        </div>
+
+        <!-- 卡片文字 -->
+        <div class="card-body">
+          <time class="card-date" datetime="${esc(article.postDate)}">${esc(date)}</time>
+          <h2 class="card-title">${esc(article.title)}</h2>
+          <p class="card-summary">${esc(article.shortSummary)}</p>
+        </div>
+
+        <!-- 底部操作列 -->
+        <div class="card-footer">
+          <span class="card-cta" aria-hidden="true">
+            查看詳細資訊
+            <span class="card-cta-arrow">→</span>
+          </span>
+        </div>
+      `;
+
+      /* 點擊卡片 → 開啟 Modal */
+      el.addEventListener('click', () => openModal(article));
+
+      /* 鍵盤 Enter / Space → 開啟 Modal（無障礙支援） */
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openModal(article);
+        }
+      });
+
+      return el;
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       openModal(article)
+       填充 modal 內容並開啟
+
+       【擴充點】
+       若日後需要在 modal 底部加入「延伸閱讀」，
+       在此函式末尾呼叫 renderRelated(article) 即可，
+       不需動 modal HTML 結構。
+       ────────────────────────────────────────────────────── */
+    function openModal(article) {
+      const imgSrc = article.imageUrl || CONFIG.FALLBACK_IMG;
+
+      /* ── 填充各欄位 ── */
+      DOM.modalImg.src = imgSrc;
+      DOM.modalImg.alt = `${article.title || ''} 封面圖`;
+
+      /* 日期 */
+      DOM.modalDate.textContent = fmtDate(article.postDate);
+      DOM.modalDate.setAttribute('datetime', article.postDate || '');
+
+      /* 精選徽章 */
+      setHidden(DOM.modalFeat, !article.featured);
+
+      /* 分類 */
+      DOM.modalCluster.textContent = article.topicCluster || '其他';
+
+      /* 標題 */
+      DOM.modalTitle.textContent = article.title || '';
+
+      /* 導讀摘要：優先用 longSummary，fallback 到 shortSummary */
+      DOM.modalSummary.textContent = article.longSummary || article.shortSummary || '';
+
+      /* 適合對象 */
+      if (article.audience) {
+        DOM.modalAud.innerHTML = `📌 適合對象：<strong>${esc(article.audience)}</strong>`;
+        setHidden(DOM.modalAud, false);
+      } else {
+        setHidden(DOM.modalAud, true);
+      }
+
+      /* Tags */
+      DOM.modalTags.innerHTML = '';
+      const tags = Array.isArray(article.tags) ? article.tags : [];
+      if (tags.length > 0) {
+        const frag = document.createDocumentFragment();
+        tags.forEach(tag => {
+          const span = document.createElement('span');
+          span.className = 'tag';
+          span.textContent = `# ${tag}`;
+          frag.appendChild(span);
+        });
+        DOM.modalTags.appendChild(frag);
+      }
+
+      /* 全文連結 */
+      DOM.modalLink.href = article.url || '#';
+
+      /* ── 開啟動畫 ── */
+      DOM.modalOverlay.classList.add('is-open');
+      DOM.modalOverlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('no-scroll');
+
+      /* 捲動回頂部（用戶上次瀏覽可能已向下） */
+      DOM.modalDialog.scrollTop = 0;
+
+      /* 焦點移到對話框（無障礙） */
+      requestAnimationFrame(() => DOM.btnClose.focus());
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       closeModal()
+       ────────────────────────────────────────────────────── */
+    function closeModal() {
+      DOM.modalOverlay.classList.remove('is-open');
+      DOM.modalOverlay.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('no-scroll');
+    }
+
+
+    /* ──────────────────────────────────────────────────────
+       事件綁定
+       ────────────────────────────────────────────────────── */
+
+    /* Modal 關閉按鈕 */
+    DOM.btnClose.addEventListener('click', closeModal);
+
+    /* 點擊遮罩（對話框外側）關閉 */
+    DOM.modalOverlay.addEventListener('click', e => {
+      if (e.target === DOM.modalOverlay) closeModal();
+    });
+
+    /* ESC 鍵關閉 */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && DOM.modalOverlay.classList.contains('is-open')) {
+        closeModal();
+      }
+    });
+
+    /* 重新載入按鈕 */
+    DOM.btnRetry.addEventListener('click', loadData);
+
+    /*
+     * 搜尋輸入（防抖 300ms，避免每次按鍵都觸發篩選）
+     * 【擴充點】搜尋邏輯在 applyFilters() 內，
+     * 未來可在此改成即時搜尋（去掉 debounce）或加入 IME 支援。
+     */
+    let searchTimer = null;
+    DOM.searchInput.addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        State.searchKeyword = e.target.value;
+        applyFilters();
+      }, 300);
+    });
+
+
+    /* ──────────────────────────────────────────────────────
+       ★ 應用程式啟動
+       ────────────────────────────────────────────────────── */
+    loadData();
+
+  </script>
+
+</body>
+</html>
