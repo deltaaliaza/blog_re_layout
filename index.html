@@ -6,1130 +6,1075 @@
   <meta name="description" content="國立陽明交通大學圖書館 AI 學習資源導覽，為大學新生精選 AI 工具與學術資源文章。" />
   <title>NYCU 圖書館 × AI 學習資源導覽</title>
 
-  <!--
-  ╔══════════════════════════════════════════════════════════════════════╗
-  ║  NYCU 圖書館 BLOG 文章彙整展示頁                                      ║
-  ║  版本：1.1.0                                                         ║
-  ║                                                                      ║
-  ║  【架構說明】                                                         ║
-  ║  本頁為單一 HTML 檔案，CSS 與 JavaScript 皆整合於此。                   ║
-  ║  文章資料由外部 JSON 檔案（articles.json）提供，                        ║
-  ║  前端以 fetch() 動態載入並渲染，未來更新資料只需修改 JSON。              ║
-  ║                                                                      ║
-  ║  【目錄結構（建議）】                                                   ║
-  ║  project/                                                            ║
-  ║  ├── index.html          ← 本檔案                                     ║
-  ║  └── articles.json   ← 文章資料                                       ║
-  ║                                                                      ║
-  ║                                                                      ║
-  ║  【GitHub Pages 部署方式】                                             ║
-  ║  修改下方 CONFIG.DATA_URL 為 jsDelivr 或 GitHub Raw URL，              ║
-  ║  push 後即可自動更新。                                                 ║
-  ╚══════════════════════════════════════════════════════════════════════╝
-  -->
-
-  <!-- Google Fonts：標題用 Noto Serif TC（知識感）、內文用 Noto Sans TC（易讀性） -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;600&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <style>
-    /* ────────────────────────────────────────────────────────────────
-       §1  Design Tokens（設計變數）
-       所有顏色、字型、間距皆集中於此，修改這裡即可統一調整風格。
-       ──────────────────────────────────────────────────────────────── */
     :root {
-      /* 色盤：深森綠 × 暖米白 × 琥珀金 */
-      --c-bg:            #f6f4ef;   /* 頁面背景 */
-      --c-surface:       #ffffff;   /* 卡片 / 對話框 */
-      --c-primary:       #1b3d2f;   /* 主色（深森綠） */
-      --c-primary-mid:   #2a5c43;   /* 中深綠（hover） */
-      --c-accent:        #b5872a;   /* 強調色（琥珀金） */
-      --c-accent-bg:     #f5ead7;   /* 精選標籤底色 */
-      --c-text:          #1a1a1a;   /* 主文字 */
-      --c-text-sub:      #555555;   /* 次要文字 */
-      --c-text-faint:    #999999;   /* 淡色文字 */
-      --c-border:        #e2dfd8;   /* 邊框 */
-      --c-tag-bg:        #edf2ee;   /* 一般 tag 底色 */
-      --c-tag-text:      #2a5c43;   /* 一般 tag 文字 */
-      --c-overlay:       rgba(8, 22, 14, 0.56); /* modal 遮罩 */
-      --c-input-focus:   rgba(27, 61, 47, 0.25); /* 搜尋框 focus ring */
-
-      /* 字型 */
-      --f-heading: 'Noto Serif TC', 'Georgia', serif;
-      --f-body:    'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-
-      /* 圓角 */
-      --r-sm:    6px;
-      --r-md:   12px;
-      --r-lg:   16px;
-      --r-pill: 999px;
-
-      /* 陰影 */
-      --sh-card:  0 2px 10px rgba(27, 61, 47, 0.07);
-      --sh-hover: 0 8px 28px rgba(27, 61, 47, 0.15);
-      --sh-modal: 0 24px 64px rgba(0, 0, 0, 0.28);
-
-      /* 動畫時間 */
-      --t-fast:   0.18s;
-      --t-base:   0.24s;
-      --t-modal:  0.3s cubic-bezier(0.33, 1, 0.68, 1);
+      --bg: #f6f5f1;
+      --surface: #ffffff;
+      --surface-soft: #faf9f6;
+      --primary: #184d3b;
+      --primary-2: #225f48;
+      --primary-3: #2f7258;
+      --accent: #c69a49;
+      --accent-soft: #f6e7ca;
+      --text: #172019;
+      --text-sub: #58635b;
+      --text-faint: #8b948d;
+      --border: #e5e6e1;
+      --tag-bg: #edf3ef;
+      --tag-text: #245745;
+      --shadow-sm: 0 4px 14px rgba(18, 43, 33, 0.06);
+      --shadow-md: 0 16px 40px rgba(20, 47, 36, 0.10);
+      --shadow-lg: 0 28px 70px rgba(13, 28, 22, 0.24);
+      --overlay: rgba(8, 20, 15, 0.62);
+      --radius-xs: 8px;
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-pill: 999px;
+      --font-body: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      --font-heading: 'Noto Serif TC', Georgia, serif;
+      --ease: 0.24s ease;
+      --ease-lg: 0.34s cubic-bezier(.2,.8,.2,1);
     }
 
-    /* ────────────────────────────────────────────────────────────────
-       §2  CSS Reset & 基礎設定
-       ──────────────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: var(--f-body);
-      background: var(--c-bg);
-      color: var(--c-text);
+      margin: 0;
+      font-family: var(--font-body);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(34,95,72,0.07), transparent 22%),
+        radial-gradient(circle at bottom left, rgba(198,154,73,0.05), transparent 18%),
+        var(--bg);
       line-height: 1.7;
       -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
+    body.no-scroll { overflow: hidden; }
     img { display: block; max-width: 100%; }
     a { color: inherit; text-decoration: none; }
-    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    button, input { font: inherit; }
+    button { border: 0; background: transparent; cursor: pointer; }
 
-    /* 防止 modal 開啟時背景捲動 */
-    body.no-scroll { overflow: hidden; }
+    .hidden { display: none !important; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* ────────────────────────────────────────────────────────────────
-       §3  Header
-       ──────────────────────────────────────────────────────────────── */
-    .site-header {
-      background: var(--c-primary);
-      color: #fff;
-      padding: 48px 24px 40px;
-      text-align: center;
+    .hero {
       position: relative;
       overflow: hidden;
+      background:
+        radial-gradient(circle at 0% 70%, rgba(255,255,255,0.06), transparent 22%),
+        radial-gradient(circle at 100% 10%, rgba(255,255,255,0.06), transparent 22%),
+        linear-gradient(180deg, #184d3b 0%, #153f30 100%);
+      color: #fff;
+      padding: 56px 20px 46px;
+      text-align: center;
     }
-    /* 裝飾性光暈 */
-    .site-header::before,
-    .site-header::after {
-      content: '';
+    .hero::before,
+    .hero::after {
+      content: "";
       position: absolute;
-      border-radius: 50%;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.035);
       pointer-events: none;
     }
-    .site-header::before {
-      width: 240px; height: 240px;
-      top: -80px; right: -60px;
-      background: rgba(255,255,255,0.04);
+    .hero::before {
+      width: 240px;
+      height: 240px;
+      top: -80px;
+      right: -70px;
     }
-    .site-header::after {
-      width: 180px; height: 180px;
-      bottom: -60px; left: -50px;
-      background: rgba(255,255,255,0.03);
+    .hero::after {
+      width: 180px;
+      height: 180px;
+      left: -60px;
+      bottom: -70px;
     }
-
-    .header-kicker {
-      font-size: 0.72rem;
+    .hero-inner {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+      z-index: 1;
+    }
+    .hero-kicker {
+      margin: 0 0 10px;
+      font-size: 0.74rem;
+      color: rgba(255,255,255,0.72);
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.55);
-      margin-bottom: 10px;
+      font-weight: 500;
     }
-    .header-title {
-      font-family: var(--f-heading);
-      font-size: clamp(1.45rem, 4.5vw, 2.2rem);
-      font-weight: 700;
-      line-height: 1.3;
+    .hero-title {
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: clamp(1.95rem, 5vw, 3.25rem);
+      line-height: 1.24;
       letter-spacing: 0.02em;
-      margin-bottom: 10px;
+      font-weight: 700;
     }
-    .header-sub {
-      font-size: 0.92rem;
-      color: rgba(255,255,255,0.68);
-      max-width: 500px;
-      margin: 0 auto;
+    .hero-sub {
+      margin: 14px auto 0;
+      max-width: 560px;
+      color: rgba(255,255,255,0.86);
+      font-size: 0.98rem;
+      line-height: 1.85;
     }
-    /* 金色底線裝飾 */
-    .header-rule {
-      width: 44px; height: 3px;
-      background: var(--c-accent);
-      border-radius: 2px;
+    .hero-line {
+      width: 46px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--accent);
       margin: 18px auto 0;
     }
 
-    /* ────────────────────────────────────────────────────────────────
-       §4  Toolbar（搜尋列 + 分類篩選 + 計數）
-       【擴充點】搜尋與篩選邏輯均集中於此區域，未來擴充不需動其他結構。
-       ──────────────────────────────────────────────────────────────── */
     .toolbar {
-      background: var(--c-surface);
-      border-bottom: 1px solid var(--c-border);
-      padding: 12px 20px;
       position: sticky;
       top: 0;
-      z-index: 200;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      z-index: 30;
+      display: grid;
+      gap: 12px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(24,77,59,0.08);
     }
-    @media (min-width: 768px) {
-      .toolbar { flex-direction: row; align-items: center; padding: 10px 28px; }
+    .toolbar-inner {
+      width: min(1200px, calc(100vw - 36px));
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar-top {
+      display: grid;
+      gap: 12px;
+      align-items: center;
+    }
+    .toolbar-bottom {
+      display: grid;
+      gap: 10px;
+      align-items: center;
+    }
+    @media (min-width: 860px) {
+      .toolbar-top {
+        grid-template-columns: minmax(0, 420px) auto;
+      }
+      .toolbar-bottom {
+        grid-template-columns: auto max-content;
+      }
     }
 
-    /* ── 搜尋輸入框（預留，初始為可選顯示） ── */
     .search-wrap {
       position: relative;
-      flex: 1;
-      max-width: 360px;
+      min-width: 0;
     }
     .search-icon {
       position: absolute;
-      left: 12px;
+      left: 14px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--c-text-faint);
-      font-size: 0.95rem;
+      color: #7e8881;
+      font-size: 0.96rem;
       pointer-events: none;
       line-height: 1;
     }
     .search-input {
       width: 100%;
-      padding: 8px 12px 8px 36px;
-      border: 1.5px solid var(--c-border);
-      border-radius: var(--r-pill);
-      font-size: 0.85rem;
-      font-family: var(--f-body);
-      color: var(--c-text);
-      background: var(--c-bg);
+      height: 44px;
+      border: 1px solid rgba(24,77,59,0.10);
+      background: rgba(246,245,241,0.9);
+      border-radius: var(--radius-pill);
+      padding: 0 16px 0 42px;
+      color: var(--text);
       outline: none;
-      transition: border-color var(--t-base), box-shadow var(--t-base);
+      transition: border-color var(--ease), box-shadow var(--ease), background var(--ease);
     }
-    .search-input::placeholder { color: var(--c-text-faint); }
+    .search-input::placeholder { color: #909890; }
     .search-input:focus {
-      border-color: var(--c-primary-mid);
-      box-shadow: 0 0 0 3px var(--c-input-focus);
+      border-color: rgba(24,77,59,0.36);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(24,77,59,0.10);
     }
 
-    /* ── 分類篩選按鈕群 ── */
-    .filter-row {
+    .filters {
       display: flex;
       align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-      flex: 1;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
     }
-    .filter-label {
-      font-size: 0.76rem;
-      color: var(--c-text-faint);
-      white-space: nowrap;
-      font-weight: 500;
-    }
-    .filter-btn {
-      padding: 4px 12px;
-      border-radius: var(--r-pill);
-      border: 1.5px solid var(--c-border);
-      font-size: 0.78rem;
-      font-family: var(--f-body);
-      color: var(--c-text-sub);
-      background: transparent;
-      transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
-      white-space: nowrap;
-      line-height: 1.6;
-    }
-    .filter-btn:hover {
-      border-color: var(--c-primary-mid);
-      color: var(--c-primary);
-    }
-    .filter-btn[aria-pressed="true"] {
-      background: var(--c-primary);
-      border-color: var(--c-primary);
-      color: #fff;
-      font-weight: 500;
-    }
-
-    /* ── 文章計數 ── */
-    .count-badge {
-      font-size: 0.78rem;
-      color: var(--c-text-faint);
-      white-space: nowrap;
-      margin-left: auto;
-    }
-    .count-badge strong { color: var(--c-primary); font-weight: 600; }
-
-    /* ────────────────────────────────────────────────────────────────
-       §5  主要內容區 & 卡片格線（Mobile-first RWD）
-       ──────────────────────────────────────────────────────────────── */
-    .page-body {
-      max-width: 1160px;
-      margin: 0 auto;
-      padding: 32px 16px 64px;
-    }
-    @media (min-width: 640px) { .page-body { padding: 36px 24px 72px; } }
-    @media (min-width: 1024px) { .page-body { padding: 40px 32px 80px; } }
-
-    /* 格線：1欄 → 2欄 → 3欄 */
-    .articles-grid {
-      display: grid;
-      grid-template-columns: 1fr;                  /* 手機：1 欄 */
-      gap: 20px;
-    }
-    @media (min-width: 600px) {
-      .articles-grid { grid-template-columns: repeat(2, 1fr); } /* 平板：2 欄 */
-    }
-    @media (min-width: 960px) {
-      .articles-grid {
-        grid-template-columns: repeat(3, 1fr);     /* 桌機：3 欄 */
-        gap: 24px;
-      }
-    }
-
-    /* ────────────────────────────────────────────────────────────────
-       §6  文章卡片
-       ──────────────────────────────────────────────────────────────── */
-    .card {
-      background: var(--c-surface);
-      border: 1px solid var(--c-border);
-      border-radius: var(--r-md);
-      overflow: hidden;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--sh-card);
-      transition: transform var(--t-base), box-shadow var(--t-base);
-      /* 進場動畫：JS 設定 --delay 做錯開效果 */
-      opacity: 0;
-      transform: translateY(14px);
-      animation: fadeUp 0.42s ease forwards;
-      animation-delay: var(--delay, 0ms);
-    }
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--sh-hover);
-    }
-    .card:focus-visible {
-      outline: 3px solid var(--c-accent);
-      outline-offset: 3px;
-    }
-    @keyframes fadeUp {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── 封面圖：固定 16:9 比例 ── */
-    .card-img-wrap {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      overflow: hidden;
-      background: var(--c-tag-bg);
-      flex-shrink: 0;
-    }
-    .card-img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-    .card:hover .card-img { transform: scale(1.05); }
-
-    /* 精選徽章（圖片左上角） */
-    .badge-featured {
-      position: absolute;
-      top: 10px; left: 10px;
-      background: var(--c-accent);
-      color: #fff;
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      padding: 3px 8px;
-      border-radius: var(--r-sm);
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    /* 主題分類標籤（圖片右下角） */
-    .badge-cluster {
-      position: absolute;
-      bottom: 8px; right: 8px;
-      background: rgba(27, 61, 47, 0.82);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      color: #fff;
-      font-size: 0.68rem;
-      padding: 2px 8px;
-      border-radius: var(--r-sm);
-    }
-
-    /* ── 卡片文字區 ── */
-    .card-body {
-      padding: 16px 18px 12px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .card-date {
-      font-size: 0.72rem;
-      color: var(--c-text-faint);
-      letter-spacing: 0.04em;
-    }
-    .card-title {
-      font-family: var(--f-heading);
-      font-size: 0.98rem;
-      font-weight: 700;
-      line-height: 1.45;
-      color: var(--c-text);
-      /* 最多顯示 2 行，超出截斷 */
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .card-summary {
-      font-size: 0.84rem;
-      color: var(--c-text-sub);
-      line-height: 1.65;
-      flex: 1;
-      /* 最多顯示 3 行，超出截斷 */
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* ── 卡片底部 ── */
-    .card-footer {
-      padding: 10px 18px 14px;
-      border-top: 1px solid var(--c-border);
-    }
-    .card-cta {
+    .filters-label {
+      flex: 0 0 auto;
+      color: var(--text-faint);
       font-size: 0.8rem;
       font-weight: 500;
-      color: var(--c-primary-mid);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: gap var(--t-fast), color var(--t-fast);
+      margin-right: 2px;
     }
-    .card:hover .card-cta {
-      color: var(--c-accent);
-      gap: 8px;
+    .filter-btn {
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.85rem;
+      border: 1px solid rgba(24,77,59,0.08);
+      background: #fff;
+      color: var(--text-sub);
+      transition: all var(--ease);
+      white-space: nowrap;
     }
-    .card-cta-arrow { font-size: 0.9rem; }
-
-    /* ────────────────────────────────────────────────────────────────
-       §7  狀態元件（Loading / Error / Empty）
-       ──────────────────────────────────────────────────────────────── */
-    .state-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 260px;
-      padding: 48px 24px;
-      gap: 14px;
-      text-align: center;
+    .filter-btn:hover {
+      border-color: rgba(24,77,59,0.26);
+      color: var(--primary);
+      background: #fbfbfa;
     }
-    .state-icon { font-size: 2.4rem; line-height: 1; }
-    .state-title {
-      font-family: var(--f-heading);
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--c-text);
-    }
-    .state-desc {
-      font-size: 0.875rem;
-      color: var(--c-text-sub);
-      max-width: 340px;
-      line-height: 1.65;
-    }
-
-    /* 旋轉圓圈（loading 動畫） */
-    .spinner {
-      width: 42px; height: 42px;
-      border: 3px solid var(--c-border);
-      border-top-color: var(--c-primary);
-      border-radius: 50%;
-      animation: spin 0.85s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* 重試按鈕 */
-    .btn-retry {
-      margin-top: 4px;
-      padding: 8px 24px;
-      background: var(--c-primary);
+    .filter-btn[aria-pressed="true"] {
+      background: var(--primary);
       color: #fff;
-      border-radius: var(--r-sm);
-      font-size: 0.88rem;
-      font-family: var(--f-body);
-      font-weight: 500;
-      transition: background var(--t-fast);
+      border-color: var(--primary);
+      box-shadow: 0 8px 18px rgba(24,77,59,0.18);
     }
-    .btn-retry:hover { background: var(--c-primary-mid); }
-
-    /* ────────────────────────────────────────────────────────────────
-       §8  Modal（對話框）
-       手機：從底部滑上（bottom sheet）
-       平板以上：置中彈出
-       ──────────────────────────────────────────────────────────────── */
-
-    /* 遮罩層 */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: var(--c-overlay);
-      backdrop-filter: blur(3px);
-      -webkit-backdrop-filter: blur(3px);
-      z-index: 500;
+    .count-wrap {
       display: flex;
-      align-items: flex-end;     /* 手機：底部對齊 */
-      justify-content: center;
-      /* 初始狀態：隱藏 */
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 24px;
+    }
+    .count-badge {
+      color: var(--text-faint);
+      font-size: 0.82rem;
+    }
+    .count-badge strong {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .btn-reset-inline {
+      font-size: 0.82rem;
+      color: var(--primary-2);
+      font-weight: 600;
       opacity: 0;
       pointer-events: none;
-      transition: opacity var(--t-modal);
+      transition: opacity var(--ease);
     }
-    @media (min-width: 640px) {
-      .modal-overlay {
-        align-items: center;     /* 平板以上：垂直置中 */
-        padding: 24px;
-      }
-    }
-
-    /* 開啟狀態 */
-    .modal-overlay.is-open {
+    .btn-reset-inline.show {
       opacity: 1;
       pointer-events: auto;
     }
 
-    /* 對話框主體 */
-    .modal-dialog {
-      background: var(--c-surface);
-      width: 100%;
-      max-width: 660px;
-      border-radius: var(--r-lg) var(--r-lg) 0 0;  /* 手機：上方圓角 */
-      max-height: 90vh;
-      overflow-y: auto;
-      overflow-x: hidden;
-      box-shadow: var(--sh-modal);
+    .page {
+      width: min(1200px, calc(100vw - 36px));
+      margin: 0 auto;
+      padding: 26px 0 74px;
+    }
+
+    .state-box {
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 40px 20px;
+      gap: 14px;
+    }
+    .state-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: #f0f2ee;
+      font-size: 2rem;
+    }
+    .state-title {
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    .state-desc {
+      margin: 0;
+      max-width: 420px;
+      color: var(--text-sub);
+      font-size: 0.92rem;
+    }
+    .btn-primary,
+    .btn-secondary {
+      height: 46px;
+      padding: 0 22px;
+      border-radius: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform var(--ease), background var(--ease), color var(--ease), border-color var(--ease);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(24,77,59,0.18);
+    }
+    .btn-primary:hover { background: var(--primary-2); transform: translateY(-1px); }
+    .btn-secondary {
+      background: #f1f3f1;
+      color: var(--text-sub);
+      border: 1px solid rgba(24,77,59,0.08);
+    }
+    .btn-secondary:hover { background: #e9edea; }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3px solid rgba(24,77,59,0.12);
+      border-top-color: var(--primary);
+      border-radius: 999px;
+      animation: spin .82s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 720px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+    }
+    @media (min-width: 1060px) {
+      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(24,77,59,0.08);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fade-up 0.42s ease forwards;
+      animation-delay: var(--delay, 0ms);
+    }
+    @keyframes fade-up {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(24,77,59,0.14);
+    }
+    .card:focus-visible {
+      outline: 3px solid rgba(198,154,73,0.78);
+      outline-offset: 4px;
+    }
+    .card-media {
       position: relative;
-      /* 動畫：手機從下滑入 */
-      transform: translateY(40px);
-      transition: transform var(--t-modal);
-    }
-    @media (min-width: 640px) {
-      .modal-dialog {
-        border-radius: var(--r-lg);               /* 平板以上：四邊圓角 */
-        transform: translateY(16px) scale(0.97);  /* 從下方淡縮入 */
-        max-height: 86vh;
-      }
-    }
-    .modal-overlay.is-open .modal-dialog {
-      transform: translateY(0) scale(1);
-    }
-
-    /* 手機拖曳提示線 */
-    .modal-handle {
-      width: 36px; height: 4px;
-      background: var(--c-border);
-      border-radius: 2px;
-      margin: 10px auto 2px;
-    }
-    @media (min-width: 640px) { .modal-handle { display: none; } }
-
-    /* ── 關閉按鈕（浮在圖片上） ── */
-    .btn-close {
-      position: absolute;
-      top: 12px; right: 12px;
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
-      color: var(--c-text);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
-      transition: background var(--t-fast), transform var(--t-fast);
-      z-index: 10;
-      line-height: 1;
-    }
-    .btn-close:hover { background: #fff; transform: scale(1.08); }
-
-    /* ── Modal 封面圖 ── */
-    .modal-img-wrap {
-      width: 100%;
       aspect-ratio: 16 / 9;
       overflow: hidden;
-      background: var(--c-tag-bg);
-      flex-shrink: 0;
+      background: #e7ece8;
     }
-    .modal-img {
-      width: 100%; height: 100%;
+    .card-img {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
+      transition: transform .55s ease;
     }
-
-    /* ── Modal 內文 ── */
-    .modal-body { padding: 20px 22px 32px; }
-
-    /* 日期 + 精選 + 分類（同一行） */
-    .modal-meta {
+    .card:hover .card-img { transform: scale(1.06); }
+    .card-badges {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
       display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+    .badge,
+    .badge-cluster,
+    .badge-featured {
+      display: inline-flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .modal-date {
-      font-size: 0.76rem;
-      color: var(--c-text-faint);
-      letter-spacing: 0.04em;
-    }
-    /* Modal 精選標籤 */
-    .modal-feat-badge {
-      background: var(--c-accent-bg);
-      color: var(--c-accent);
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: var(--r-sm);
-      letter-spacing: 0.05em;
-    }
-    /* Modal 分類標籤 */
-    .modal-cluster {
-      background: var(--c-tag-bg);
-      color: var(--c-tag-text);
+      gap: 4px;
       font-size: 0.72rem;
-      font-weight: 500;
-      padding: 2px 10px;
-      border-radius: var(--r-pill);
-      border: 1px solid rgba(42, 92, 67, 0.2);
-    }
-
-    /* Modal 標題 */
-    .modal-title {
-      font-family: var(--f-heading);
-      font-size: clamp(1.05rem, 3.5vw, 1.3rem);
-      font-weight: 700;
-      line-height: 1.42;
-      margin-bottom: 16px;
-      color: var(--c-text);
-    }
-
-    /* 小節標題 */
-    .section-label {
-      font-size: 0.68rem;
+      line-height: 1;
+      padding: 7px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--c-text-faint);
-      margin-bottom: 8px;
     }
-
-    /* 導讀摘要（左側金色豎線） */
-    .modal-summary {
-      font-size: 0.895rem;
-      line-height: 1.82;
-      color: var(--c-text-sub);
-      border-left: 3px solid var(--c-accent);
-      padding-left: 14px;
-      margin-bottom: 18px;
+    .badge-featured {
+      background: rgba(246, 231, 202, 0.96);
+      color: #9f6922;
+      box-shadow: 0 6px 16px rgba(130, 90, 24, 0.16);
     }
-
-    /* 適合對象 */
-    .modal-audience {
-      font-size: 0.82rem;
-      color: var(--c-text-sub);
-      margin-bottom: 18px;
+    .badge-cluster {
+      margin-left: auto;
+      background: rgba(255,255,255,0.90);
+      color: var(--primary);
+      box-shadow: 0 6px 16px rgba(22, 47, 36, 0.08);
+    }
+    .card-body {
+      padding: 20px 20px 16px;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
     }
-    .modal-audience strong { color: var(--c-primary); font-weight: 600; }
-
-    /* Tags */
-    .tags-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 24px;
-    }
-    .tag {
-      background: var(--c-tag-bg);
-      color: var(--c-tag-text);
-      font-size: 0.75rem;
-      padding: 3px 10px;
-      border-radius: var(--r-pill);
-      border: 1px solid rgba(42, 92, 67, 0.15);
-    }
-
-    /* 全文連結按鈕 */
-    .btn-readmore {
+    .card-date {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: var(--c-primary);
-      color: #fff;
-      padding: 10px 22px;
-      border-radius: var(--r-sm);
-      font-size: 0.9rem;
-      font-weight: 500;
-      font-family: var(--f-body);
-      transition: background var(--t-fast), transform var(--t-fast);
-      text-decoration: none;
+      color: #8b938c;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
     }
-    .btn-readmore:hover {
-      background: var(--c-primary-mid);
-      transform: translateX(2px);
-    }
-    .btn-readmore-icon { font-size: 0.85rem; }
-
-    /* ────────────────────────────────────────────────────────────────
-       §9  頁腳
-       ──────────────────────────────────────────────────────────────── */
-    .site-footer {
-      text-align: center;
-      padding: 32px 24px;
-      border-top: 1px solid var(--c-border);
-      font-size: 0.76rem;
-      color: var(--c-text-faint);
-      line-height: 2;
-    }
-    .site-footer a {
-      color: var(--c-primary-mid);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
-    /* ────────────────────────────────────────────────────────────────
-       §10  無障礙輔助
-       ──────────────────────────────────────────────────────────────── */
-    .sr-only {
-      position: absolute;
-      width: 1px; height: 1px;
+    .card-date .icon { font-size: 0.9rem; }
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.08rem;
+      line-height: 1.46;
+      margin: 0 0 10px;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
       overflow: hidden;
-      clip: rect(0,0,0,0);
+    }
+    .card-title strong { font-weight: 700; }
+    .card-summary {
+      color: var(--text-sub);
+      font-size: 0.92rem;
+      line-height: 1.75;
+      margin: 0 0 18px;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+      flex: 1;
+    }
+    .card-footer {
+      border-top: 1px solid rgba(24,77,59,0.06);
+      padding-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      min-width: 0;
+      overflow: hidden;
+      flex-wrap: wrap;
+    }
+    .card-tag-preview {
+      color: #8b938c;
+      font-size: 0.74rem;
       white-space: nowrap;
     }
-    /* 顯示 / 隱藏用（JS 控制） */
-    .hidden { display: none !important; }
+    .card-cta {
+      color: var(--primary-2);
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: color var(--ease), gap var(--ease), transform var(--ease);
+    }
+    .card:hover .card-cta {
+      color: var(--accent);
+      gap: 10px;
+      transform: translateX(2px);
+    }
+
+    .footer {
+      margin-top: 48px;
+      border-top: 1px solid rgba(24,77,59,0.08);
+      background: rgba(255,255,255,0.74);
+    }
+    .footer-inner {
+      width: min(1200px, calc(100vw - 36px));
+      margin: 0 auto;
+      padding: 30px 0 34px;
+      display: grid;
+      gap: 18px;
+      color: var(--text-faint);
+      font-size: 0.82rem;
+    }
+    @media (min-width: 760px) {
+      .footer-inner {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+    }
+    .footer-brand {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .footer-brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--primary);
+      color: #fff;
+      font-size: 1rem;
+      box-shadow: 0 10px 22px rgba(24,77,59,0.16);
+      flex-shrink: 0;
+    }
+    .footer-brand-title {
+      color: var(--primary);
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 0 0 3px;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 22px;
+      justify-content: flex-start;
+    }
+    .footer-links a {
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+    .footer-links a:hover { color: var(--primary); }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--ease-lg);
+      z-index: 100;
+      padding: 0;
+    }
+    .modal-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-dialog {
+      width: 100%;
+      max-width: 920px;
+      max-height: 92vh;
+      background: var(--surface);
+      border-radius: 26px 26px 0 0;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(38px) scale(0.98);
+      transition: transform var(--ease-lg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .modal-overlay.is-open .modal-dialog { transform: translateY(0) scale(1); }
+    @media (min-width: 760px) {
+      .modal-overlay {
+        align-items: center;
+        padding: 20px;
+      }
+      .modal-dialog {
+        border-radius: 28px;
+        max-height: 88vh;
+      }
+    }
+    .modal-handle {
+      width: 42px;
+      height: 4px;
+      border-radius: 999px;
+      background: #dfe4e0;
+      margin: 10px auto 2px;
+      flex-shrink: 0;
+    }
+    @media (min-width: 760px) {
+      .modal-handle { display: none; }
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: rgba(17, 23, 20, 0.28);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 3;
+      font-size: 1.05rem;
+      transition: background var(--ease), transform var(--ease);
+    }
+    .modal-close:hover {
+      background: rgba(17, 23, 20, 0.42);
+      transform: scale(1.06);
+    }
+    .modal-scroll {
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .modal-media {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: #e7ece8;
+      overflow: hidden;
+    }
+    @media (min-width: 760px) {
+      .modal-media { aspect-ratio: 21 / 9; }
+    }
+    .modal-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .modal-content {
+      padding: 24px 22px 30px;
+    }
+    @media (min-width: 760px) {
+      .modal-content {
+        padding: 34px 34px 36px;
+      }
+    }
+    .modal-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .meta-date {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #808981;
+      font-size: 0.84rem;
+    }
+    .meta-badge,
+    .meta-featured {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .meta-badge {
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border: 1px solid rgba(36,87,69,0.14);
+    }
+    .meta-featured {
+      background: var(--accent-soft);
+      color: #a06d25;
+    }
+    .modal-title {
+      margin: 0 0 20px;
+      font-family: var(--font-heading);
+      font-size: clamp(1.32rem, 3vw, 2rem);
+      line-height: 1.42;
+    }
+    .section-kicker {
+      margin: 0 0 8px;
+      font-size: 0.74rem;
+      color: var(--text-faint);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .summary-box {
+      margin: 0 0 18px;
+      background: linear-gradient(180deg, rgba(246,245,241,0.92), rgba(255,255,255,1));
+      border-radius: 20px;
+      border-left: 4px solid var(--accent);
+      padding: 18px 18px 18px 20px;
+      color: var(--text-sub);
+      line-height: 1.88;
+      font-size: 0.95rem;
+    }
+    .audience {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 22px;
+      color: var(--text-sub);
+      font-size: 0.9rem;
+      background: #f7f8f6;
+      padding: 10px 14px;
+      border-radius: 14px;
+    }
+    .audience strong { color: var(--primary); }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 26px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(36,87,69,0.12);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (min-width: 640px) {
+      .modal-actions {
+        flex-direction: row;
+      }
+      .modal-actions .btn-primary { flex: 1; }
+    }
+    .btn-link-icon { font-size: 0.92rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
-
 <body>
-
-  <!-- ════════════════════════════════════════════════
-       HEADER
-       ════════════════════════════════════════════════ -->
-  <header class="site-header" role="banner">
-    <p class="header-kicker">國立陽明交通大學圖書館</p>
-    <h1 class="header-title">AI 學習資源導覽</h1>
-    <p class="header-sub">
-      為大學新生精選 AI 工具與學術資源文章，<br />
-      快速掌握圖書館的數位學習資源。
-    </p>
-    <div class="header-rule" aria-hidden="true"></div>
+  <header class="hero" role="banner">
+    <div class="hero-inner">
+      <p class="hero-kicker">國立陽明交通大學圖書館</p>
+      <h1 class="hero-title">AI 學習資源導覽</h1>
+      <p class="hero-sub">為大學新生精選 AI 工具與學術資源文章，快速掌握圖書館的數位學習資源與研究入口。</p>
+      <div class="hero-line" aria-hidden="true"></div>
+    </div>
   </header>
 
-  <!-- ════════════════════════════════════════════════
-       TOOLBAR（搜尋 + 分類篩選 + 計數）
-       ════════════════════════════════════════════════ -->
-  <div class="toolbar" role="search" aria-label="文章搜尋與分類篩選">
-
-    <!-- ── 搜尋框（預留擴充用，預設顯示） ── -->
-    <div class="search-wrap">
-      <span class="search-icon" aria-hidden="true">🔍</span>
-      <input
-        class="search-input"
-        id="search-input"
-        type="search"
-        placeholder="搜尋文章標題或關鍵字…"
-        aria-label="搜尋文章"
-        autocomplete="off"
-      />
+  <section class="toolbar" aria-label="文章搜尋與分類篩選">
+    <div class="toolbar-inner">
+      <div class="toolbar-top">
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true">🔎</span>
+          <label class="sr-only" for="search-input">搜尋文章</label>
+          <input id="search-input" class="search-input" type="search" placeholder="搜尋文章、摘要或標籤..." autocomplete="off" />
+        </div>
+      </div>
+      <div class="toolbar-bottom">
+        <div id="filter-row" class="filters no-scrollbar" role="group" aria-label="文章分類篩選">
+          <span class="filters-label">分類：</span>
+        </div>
+        <div class="count-wrap">
+          <p id="count-badge" class="count-badge" aria-live="polite" aria-atomic="true"></p>
+          <button id="btn-reset-inline" class="btn-reset-inline" type="button">重置篩選</button>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <!-- ── 分類篩選按鈕群（JS 動態生成） ── -->
-    <div class="filter-row" id="filter-row" role="group" aria-label="依主題分類篩選">
-      <span class="filter-label">分類：</span>
-      <!-- 篩選按鈕由 JS 根據 JSON 實際 topicCluster 值動態插入 -->
-    </div>
-
-    <!-- ── 文章計數（JS 動態更新） ── -->
-    <p class="count-badge" id="count-badge" aria-live="polite" aria-atomic="true"></p>
-
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════
-       MAIN
-       ════════════════════════════════════════════════ -->
-  <main class="page-body" role="main">
-
-    <!-- §A 載入中狀態 -->
-    <div class="state-box" id="state-loading" role="status" aria-live="polite">
+  <main class="page" role="main">
+    <section id="state-loading" class="state-box" role="status" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
-      <p class="state-title">正在載入文章資料…</p>
-      <p class="state-desc">請稍候，前端正在讀取文章 JSON。</p>
-    </div>
+      <h2 class="state-title">正在載入文章資料</h2>
+      <p class="state-desc">請稍候，系統正在讀取文章清單並建立導覽頁面。</p>
+    </section>
 
-    <!-- §B 錯誤狀態 -->
-    <div class="state-box hidden" id="state-error" role="alert">
-      <span class="state-icon" aria-hidden="true">⚠️</span>
-      <p class="state-title">無法載入文章資料</p>
-      <p class="state-desc" id="error-detail">請確認 JSON 路徑是否正確，或稍後再試。</p>
-      <button class="btn-retry" id="btn-retry">重新載入</button>
-    </div>
+    <section id="state-error" class="state-box hidden" role="alert">
+      <div class="state-icon" aria-hidden="true">⚠️</div>
+      <h2 class="state-title">無法載入文章資料</h2>
+      <p id="error-detail" class="state-desc">請確認 JSON 路徑與格式是否正確，或稍後再試。</p>
+      <button id="btn-retry" class="btn-primary" type="button">重新載入</button>
+    </section>
 
-    <!-- §C 空資料狀態 -->
-    <div class="state-box hidden" id="state-empty">
-      <span class="state-icon" aria-hidden="true">📭</span>
-      <p class="state-title">找不到符合條件的文章</p>
-      <p class="state-desc">請嘗試選擇其他分類，或清除搜尋關鍵字。</p>
-    </div>
+    <section id="state-empty" class="state-box hidden">
+      <div class="state-icon" aria-hidden="true">🔎</div>
+      <h2 class="state-title">找不到符合條件的文章</h2>
+      <p class="state-desc">可以嘗試切換分類、清除搜尋關鍵字，或重新載入最新資料。</p>
+      <button id="btn-reset-empty" class="btn-secondary" type="button">重置所有篩選</button>
+    </section>
 
-    <!-- §D 文章卡片格線（JS 動態填入卡片） -->
-    <div
-      class="articles-grid hidden"
-      id="articles-grid"
-      role="list"
-      aria-label="文章列表"
-    ></div>
-
+    <section id="articles-grid" class="grid hidden" role="list" aria-label="文章列表"></section>
   </main>
 
-
-  <!-- ════════════════════════════════════════════════
-       MODAL（JS 動態填充內容）
-       ════════════════════════════════════════════════ -->
-  <div
-    class="modal-overlay"
-    id="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title-el"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog" id="modal-dialog" tabindex="-1">
-
-      <!-- 手機拖曳提示線 -->
-      <div class="modal-handle" aria-hidden="true"></div>
-
-      <!-- 關閉按鈕 -->
-      <button class="btn-close" id="btn-close" aria-label="關閉對話框">✕</button>
-
-      <!-- 封面圖 -->
-      <div class="modal-img-wrap">
-        <img class="modal-img" id="modal-img" src="" alt="" loading="lazy" />
-      </div>
-
-      <!-- 內文 -->
-      <div class="modal-body">
-
-        <!-- 日期 + 精選 + 分類 -->
-        <div class="modal-meta">
-          <time class="modal-date" id="modal-date"></time>
-          <span class="modal-feat-badge hidden" id="modal-feat-badge">★ 精選文章</span>
-          <span class="modal-cluster" id="modal-cluster"></span>
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-brand-icon" aria-hidden="true">📚</div>
+        <div>
+          <p class="footer-brand-title">NYCU Library Blog Portal</p>
+          <div>資料來源為國立陽明交通大學圖書館 BLOG，頁面僅作學習導覽與資源入口使用。</div>
         </div>
-
-        <!-- 標題 -->
-        <h2 class="modal-title" id="modal-title-el"></h2>
-
-        <!-- 導讀摘要 -->
-        <p class="section-label">文章導讀</p>
-        <p class="modal-summary" id="modal-summary"></p>
-
-        <!-- 適合對象 -->
-        <p class="modal-audience" id="modal-audience"></p>
-
-        <!-- Tags -->
-        <p class="section-label">相關主題</p>
-        <div class="tags-wrap" id="modal-tags"></div>
-
-        <!-- 全文連結按鈕 -->
-        <a
-          class="btn-readmore"
-          id="modal-link"
-          href="#"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          前往閱讀全文
-          <span class="btn-readmore-icon" aria-hidden="true">↗</span>
-        </a>
-
-      </div><!-- /.modal-body -->
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.modal-overlay -->
-
-
-  <!-- ════════════════════════════════════════════════
-       FOOTER
-       ════════════════════════════════════════════════ -->
-  <footer class="site-footer" role="contentinfo">
-    <p>
-      資料來源：<a href="https://news.lib.nycu.edu.tw/" target="_blank" rel="noopener noreferrer">國立陽明交通大學圖書館 BLOG</a>
-    </p>
-    <p>本頁文章由圖書館數位服務組整理維護，僅供學術導覽使用。</p>
+      </div>
+      <nav class="footer-links" aria-label="頁尾連結">
+        <a href="https://www.lib.nycu.edu.tw/" target="_blank" rel="noopener noreferrer">圖書館首頁</a>
+        <a href="https://news.lib.nycu.edu.tw/" target="_blank" rel="noopener noreferrer">部落格原文</a>
+      </nav>
+    </div>
   </footer>
 
+  <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+    <div id="modal-dialog" class="modal-dialog" tabindex="-1">
+      <div class="modal-handle" aria-hidden="true"></div>
+      <button id="btn-close" class="modal-close" type="button" aria-label="關閉視窗">✕</button>
+      <div class="modal-scroll no-scrollbar">
+        <div class="modal-media">
+          <img id="modal-image" class="modal-image" src="" alt="" loading="lazy" />
+        </div>
+        <div class="modal-content">
+          <div class="modal-meta">
+            <div id="modal-featured" class="meta-featured hidden">★ 精選文章</div>
+            <div id="modal-cluster" class="meta-badge"></div>
+            <div id="modal-date" class="meta-date"></div>
+          </div>
+          <h2 id="modal-title" class="modal-title"></h2>
+          <p class="section-kicker">導讀摘要</p>
+          <div id="modal-summary" class="summary-box"></div>
+          <p id="modal-audience" class="audience hidden"></p>
+          <p class="section-kicker">相關主題</p>
+          <div id="modal-tags" class="tags"></div>
+          <div class="modal-actions">
+            <a id="modal-link" class="btn-primary" href="#" target="_blank" rel="noopener noreferrer">前往閱讀全文 <span class="btn-link-icon" aria-hidden="true">↗</span></a>
+            <button id="btn-close-secondary" class="btn-secondary" type="button">關閉視窗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- ════════════════════════════════════════════════════════════════
-       JavaScript 主程式
-
-       【程式結構索引】
-         CONFIG      — 全域設定，只需修改這裡
-         State       — 應用程式狀態物件
-         DOM         — DOM 元素快取
-         Utils       — 工具函式（日期格式化、HTML跳脫）
-         UI helpers  — 顯示/隱藏各狀態
-         loadData()  — fetch JSON，初始化資料
-         buildFilters()  — 動態建立篩選按鈕
-         applyFilters()  — 套用分類 + 搜尋篩選
-         renderGrid()    — 渲染卡片格線
-         createCard()    — 建立單張卡片元素
-         openModal()     — 開啟並填充 Modal
-         closeModal()    — 關閉 Modal
-         Event bindings  — 事件監聽
-         App init        — 啟動入口
-       ════════════════════════════════════════════════════════════════ -->
   <script>
     'use strict';
 
-    /* ──────────────────────────────────────────────────────
-       ★ CONFIG（全域設定）
-       ── 未來只需修改這個物件 ──
-
-       DATA_URL 範例：
-         本機測試：      './data/articles.json'
-         GitHub Raw：    'https://raw.githubusercontent.com/帳號/repo/main/data/articles.json'
-         jsDelivr CDN：  'https://cdn.jsdelivr.net/gh/帳號/repo@main/data/articles.json'
-                         （推薦正式環境使用，CDN 有快取加速且穩定）
-       ────────────────────────────────────────────────────── */
     const CONFIG = {
       DATA_URL: './articles.json',
-
-      /** 圖片 fallback：無 imageUrl 時顯示的預設圖 */
       FALLBACK_IMG: 'https://placehold.co/800x450/edf2ee/2a5c43?text=NYCU+Library',
-
-      /** topicCluster 順序（決定篩選按鈕排序） */
       CLUSTER_ORDER: ['AI研究工具', '學術資源', '研究方法', '圖書館服務', '其他'],
     };
 
-
-    /* ──────────────────────────────────────────────────────
-       State（應用程式狀態）
-       ────────────────────────────────────────────────────── */
     const State = {
-      allArticles:      [],    // 全部 display=true 的文章（已排序）
-      filteredArticles: [],    // 篩選後的文章
-      activeCluster:    '全部', // 當前分類篩選
-      searchKeyword:    '',    // 當前搜尋關鍵字
+      allArticles: [],
+      filteredArticles: [],
+      activeCluster: '全部',
+      searchKeyword: '',
+      selectedArticle: null,
     };
 
-
-    /* ──────────────────────────────────────────────────────
-       DOM（元素快取）
-       ────────────────────────────────────────────────────── */
     const DOM = {
-      searchInput:  document.getElementById('search-input'),
-      filterRow:    document.getElementById('filter-row'),
-      countBadge:   document.getElementById('count-badge'),
-      articlesGrid: document.getElementById('articles-grid'),
+      searchInput: document.getElementById('search-input'),
+      filterRow: document.getElementById('filter-row'),
+      countBadge: document.getElementById('count-badge'),
+      btnResetInline: document.getElementById('btn-reset-inline'),
+      btnResetEmpty: document.getElementById('btn-reset-empty'),
       stateLoading: document.getElementById('state-loading'),
-      stateError:   document.getElementById('state-error'),
-      stateEmpty:   document.getElementById('state-empty'),
-      errorDetail:  document.getElementById('error-detail'),
-      btnRetry:     document.getElementById('btn-retry'),
-      /* Modal */
+      stateError: document.getElementById('state-error'),
+      stateEmpty: document.getElementById('state-empty'),
+      errorDetail: document.getElementById('error-detail'),
+      btnRetry: document.getElementById('btn-retry'),
+      articlesGrid: document.getElementById('articles-grid'),
       modalOverlay: document.getElementById('modal-overlay'),
-      modalDialog:  document.getElementById('modal-dialog'),
-      btnClose:     document.getElementById('btn-close'),
-      modalImg:     document.getElementById('modal-img'),
-      modalDate:    document.getElementById('modal-date'),
-      modalFeat:    document.getElementById('modal-feat-badge'),
+      modalDialog: document.getElementById('modal-dialog'),
+      btnClose: document.getElementById('btn-close'),
+      btnCloseSecondary: document.getElementById('btn-close-secondary'),
+      modalImage: document.getElementById('modal-image'),
+      modalFeatured: document.getElementById('modal-featured'),
       modalCluster: document.getElementById('modal-cluster'),
-      modalTitle:   document.getElementById('modal-title-el'),
+      modalDate: document.getElementById('modal-date'),
+      modalTitle: document.getElementById('modal-title'),
       modalSummary: document.getElementById('modal-summary'),
-      modalAud:     document.getElementById('modal-audience'),
-      modalTags:    document.getElementById('modal-tags'),
-      modalLink:    document.getElementById('modal-link'),
+      modalAudience: document.getElementById('modal-audience'),
+      modalTags: document.getElementById('modal-tags'),
+      modalLink: document.getElementById('modal-link'),
     };
 
-
-    /* ──────────────────────────────────────────────────────
-       Utils（工具函式）
-       ────────────────────────────────────────────────────── */
-
-    /**
-     * 將 YYYY-MM-DD 格式化為中文日期
-     * @param {string} dateStr
-     * @returns {string}
-     */
-    function fmtDate(dateStr) {
-      if (!dateStr) return '日期不詳';
-      const [y, m, d] = dateStr.split('-');
-      return `${y} 年 ${parseInt(m)} 月 ${parseInt(d)} 日`;
-    }
-
-    /**
-     * HTML 跳脫：防止 XSS（在使用 innerHTML 前呼叫）
-     * @param {*} val
-     * @returns {string}
-     */
-    function esc(val) {
-      if (val == null) return '';
-      return String(val)
+    function esc(value) {
+      if (value == null) return '';
+      return String(value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
     }
 
-    /**
-     * 切換 `hidden` class 的小工具
-     * @param {HTMLElement} el
-     * @param {boolean} isHidden
-     */
-    function setHidden(el, isHidden) {
-      el.classList.toggle('hidden', isHidden);
+    function setHidden(element, hidden) {
+      element.classList.toggle('hidden', hidden);
     }
 
+    function formatDate(dateStr) {
+      if (!dateStr) return '日期不詳';
+      const [y, m, d] = String(dateStr).split('-');
+      if (!y || !m || !d) return String(dateStr);
+      return `${y} 年 ${parseInt(m, 10)} 月 ${parseInt(d, 10)} 日`;
+    }
 
-    /* ──────────────────────────────────────────────────────
-       UI 狀態切換
-       showState('loading' | 'error' | 'empty' | 'grid')
-       ────────────────────────────────────────────────────── */
+    function normalizeArticle(raw, index) {
+      return {
+        id: raw?.id || `article-${index + 1}`,
+        title: raw?.title || '未命名文章',
+        url: raw?.url || '#',
+        postDate: raw?.postDate || '',
+        imageUrl: raw?.imageUrl || '',
+        shortSummary: raw?.shortSummary || '',
+        longSummary: raw?.longSummary || raw?.shortSummary || '',
+        topicCluster: raw?.topicCluster || '其他',
+        tags: Array.isArray(raw?.tags) ? raw.tags.filter(Boolean) : [],
+        audience: raw?.audience || '',
+        display: raw?.display !== false,
+        featured: raw?.featured === true,
+        lastReviewed: raw?.lastReviewed || '',
+        updatedAt: raw?.updatedAt || '',
+        note: raw?.note || '',
+      };
+    }
+
     function showState(which) {
       setHidden(DOM.stateLoading, which !== 'loading');
-      setHidden(DOM.stateError,   which !== 'error');
-      setHidden(DOM.stateEmpty,   which !== 'empty');
+      setHidden(DOM.stateError, which !== 'error');
+      setHidden(DOM.stateEmpty, which !== 'empty');
       setHidden(DOM.articlesGrid, which !== 'grid');
     }
 
+    function hasActiveFilters() {
+      return State.activeCluster !== '全部' || State.searchKeyword.trim() !== '';
+    }
 
-    /* ──────────────────────────────────────────────────────
-       loadData()
-       以 fetch() 載入 JSON，初始化 State.allArticles
-       ────────────────────────────────────────────────────── */
+    function updateResetVisibility() {
+      DOM.btnResetInline.classList.toggle('show', hasActiveFilters());
+    }
+
+    function resetFilters() {
+      State.activeCluster = '全部';
+      State.searchKeyword = '';
+      DOM.searchInput.value = '';
+      applyFilters();
+    }
+
+    function getArticlesFromJson(json) {
+      if (Array.isArray(json)) return json;
+      if (json && Array.isArray(json.articles)) return json.articles;
+      return null;
+    }
+
     async function loadData() {
       showState('loading');
 
       try {
-        const res = await fetch(CONFIG.DATA_URL, {
-          cache: 'no-cache',  // 避免瀏覽器快取舊版 JSON
-        });
-
-        /* 檢查 HTTP 狀態 */
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}：${res.statusText}`);
+        const response = await fetch(CONFIG.DATA_URL, { cache: 'no-cache' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}：${response.statusText}`);
         }
 
-        const json = await res.json();
+        const json = await response.json();
+        const articles = getArticlesFromJson(json);
 
-        /* 基本格式驗證 */
-        if (!json || !Array.isArray(json.articles)) {
-          throw new Error('JSON 格式錯誤，找不到 articles 陣列。');
+        if (!articles) {
+          throw new Error('JSON 格式錯誤：應為陣列，或物件中的 articles 陣列。');
         }
 
-        /*
-         * 排序規則：
-         *   1. featured=true 優先
-         *   2. 同類下依 postDate 由新到舊
-         */
-        State.allArticles = json.articles
-          .filter(a => a.display === true)           // 只取 display=true
+        State.allArticles = articles
+          .map(normalizeArticle)
+          .filter(article => article.display)
           .sort((a, b) => {
             if (a.featured && !b.featured) return -1;
             if (!a.featured && b.featured) return 1;
-            return (b.postDate || '').localeCompare(a.postDate || '');
+            return String(b.postDate || '').localeCompare(String(a.postDate || ''));
           });
 
-        /* 初始化篩選按鈕 */
         buildFilters();
-
-        /* 初始渲染（無篩選） */
         applyFilters();
-
-      } catch (err) {
-        /* 顯示錯誤狀態，讓使用者看到詳細錯誤訊息 */
-        console.error('[NYCU Lib] 載入失敗：', err);
-        DOM.errorDetail.textContent = `錯誤詳情：${err.message}`;
+      } catch (error) {
+        console.error('[NYCU Portal] loadData error:', error);
+        DOM.errorDetail.textContent = `錯誤詳情：${error?.message || '未知錯誤'}`;
         showState('error');
       }
     }
 
-
-    /* ──────────────────────────────────────────────────────
-       buildFilters()
-       根據 State.allArticles 實際出現的 topicCluster，
-       動態建立篩選按鈕（含「全部」）
-       ────────────────────────────────────────────────────── */
     function buildFilters() {
-      /* 找出資料中實際存在的分類，保持 CONFIG.CLUSTER_ORDER 定義的排序 */
-      const usedClusters = CONFIG.CLUSTER_ORDER.filter(c =>
-        State.allArticles.some(a => a.topicCluster === c)
+      DOM.filterRow.querySelectorAll('.filter-btn').forEach(node => node.remove());
+
+      const usedClusters = CONFIG.CLUSTER_ORDER.filter(cluster =>
+        State.allArticles.some(article => article.topicCluster === cluster)
       );
 
-      /* 清除舊按鈕（保留「分類：」標籤文字） */
-      DOM.filterRow.querySelectorAll('.filter-btn').forEach(b => b.remove());
-
-      /* 建立「全部」+ 各分類按鈕 */
       ['全部', ...usedClusters].forEach(cluster => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn';
-        btn.textContent = cluster;
-        btn.setAttribute('aria-pressed', cluster === '全部' ? 'true' : 'false');
-        btn.dataset.cluster = cluster;
-        btn.addEventListener('click', () => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'filter-btn';
+        button.dataset.cluster = cluster;
+        button.textContent = cluster;
+        button.setAttribute('aria-pressed', cluster === State.activeCluster ? 'true' : 'false');
+        button.addEventListener('click', () => {
           State.activeCluster = cluster;
           applyFilters();
         });
-        DOM.filterRow.appendChild(btn);
+        DOM.filterRow.appendChild(button);
       });
     }
 
-
-    /* ──────────────────────────────────────────────────────
-       applyFilters()
-       結合「分類篩選」與「關鍵字搜尋」更新顯示結果
-
-       【擴充點】
-       未來如需加入進階篩選（audience、日期範圍等），
-       只需在此函式中增加 .filter() 條件即可，
-       不必修改卡片渲染或 modal 邏輯。
-       ────────────────────────────────────────────────────── */
     function applyFilters() {
+      const keyword = State.searchKeyword.trim().toLowerCase();
       const cluster = State.activeCluster;
-      const kw = State.searchKeyword.trim().toLowerCase();
 
-      /* 更新篩選按鈕 active 狀態 */
-      DOM.filterRow.querySelectorAll('.filter-btn').forEach(btn => {
-        const isActive = btn.dataset.cluster === cluster;
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      DOM.filterRow.querySelectorAll('.filter-btn').forEach(button => {
+        const isActive = button.dataset.cluster === cluster;
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
 
-      /* 步驟1：分類篩選 */
       let result = cluster === '全部'
         ? [...State.allArticles]
-        : State.allArticles.filter(a => a.topicCluster === cluster);
+        : State.allArticles.filter(article => article.topicCluster === cluster);
 
-      /* 步驟2：關鍵字搜尋（比對 title / shortSummary / tags） */
-      if (kw) {
-        result = result.filter(a => {
-          const inTitle   = (a.title || '').toLowerCase().includes(kw);
-          const inSummary = (a.shortSummary || '').toLowerCase().includes(kw);
-          const inTags    = (a.tags || []).some(t => t.toLowerCase().includes(kw));
-          return inTitle || inSummary || inTags;
+      if (keyword) {
+        result = result.filter(article => {
+          const title = (article.title || '').toLowerCase();
+          const summary = (article.shortSummary || '').toLowerCase();
+          const tags = (article.tags || []).join(' ').toLowerCase();
+          return title.includes(keyword) || summary.includes(keyword) || tags.includes(keyword);
         });
       }
 
       State.filteredArticles = result;
-
-      /* 更新計數 */
       DOM.countBadge.innerHTML = `共 <strong>${result.length}</strong> 篇`;
+      updateResetVisibility();
 
-      /* 渲染卡片或空狀態 */
       if (result.length === 0) {
         showState('empty');
       } else {
@@ -1138,212 +1083,147 @@
       }
     }
 
-
-    /* ──────────────────────────────────────────────────────
-       renderGrid(articles)
-       將文章陣列渲染成卡片格線
-       ────────────────────────────────────────────────────── */
     function renderGrid(articles) {
-      /* 用 DocumentFragment 一次性插入，減少 DOM reflow */
-      const frag = document.createDocumentFragment();
-      articles.forEach((article, idx) => {
-        frag.appendChild(createCard(article, idx));
+      const fragment = document.createDocumentFragment();
+      articles.forEach((article, index) => {
+        fragment.appendChild(createCard(article, index));
       });
       DOM.articlesGrid.innerHTML = '';
-      DOM.articlesGrid.appendChild(frag);
+      DOM.articlesGrid.appendChild(fragment);
     }
 
+    function createCard(article, index) {
+      const node = document.createElement('article');
+      node.className = 'card';
+      node.setAttribute('role', 'listitem');
+      node.setAttribute('tabindex', '0');
+      node.style.setProperty('--delay', `${index * 55}ms`);
+      node.setAttribute('aria-label', `文章：${article.title}`);
 
-    /* ──────────────────────────────────────────────────────
-       createCard(article, index)
-       建立並回傳單張卡片的 HTMLElement
+      const imageUrl = article.imageUrl || CONFIG.FALLBACK_IMG;
+      const tagPreview = (article.tags || []).slice(0, 2)
+        .map(tag => `<span class="card-tag-preview">#${esc(tag)}</span>`)
+        .join('');
 
-       【注意】innerHTML 內的動態值皆已通過 esc() 跳脫，
-       onerror 屬性也只使用 CONFIG 常數，不含使用者輸入。
-       ────────────────────────────────────────────────────── */
-    function createCard(article, idx) {
-      const imgSrc  = article.imageUrl || CONFIG.FALLBACK_IMG;
-      const date    = fmtDate(article.postDate);
-      const cluster = article.topicCluster || '其他';
-
-      const el = document.createElement('article');
-      el.className = 'card';
-      el.setAttribute('role', 'listitem');
-      el.setAttribute('tabindex', '0');
-      el.setAttribute('aria-label', `文章：${esc(article.title)}`);
-      /* 錯開進場動畫，每張卡片延遲 55ms */
-      el.style.setProperty('--delay', `${idx * 55}ms`);
-
-      el.innerHTML = `
-        <!-- 封面圖（16:9） -->
-        <div class="card-img-wrap">
-          <img
-            class="card-img"
-            src="${esc(imgSrc)}"
-            alt="${esc(article.title)} 封面圖"
-            loading="lazy"
-            onerror="this.src='${CONFIG.FALLBACK_IMG}'"
-          />
-          ${article.featured
-            ? `<span class="badge-featured" aria-label="精選文章">★ 精選</span>`
-            : ''}
-          <span class="badge-cluster" aria-label="分類：${esc(cluster)}">${esc(cluster)}</span>
+      node.innerHTML = `
+        <div class="card-media">
+          <img class="card-img" src="${esc(imageUrl)}" alt="${esc(article.title)} 封面圖" loading="lazy" referrerpolicy="no-referrer" onerror="this.src='${CONFIG.FALLBACK_IMG}'" />
+          <div class="card-badges">
+            ${article.featured ? '<span class="badge-featured">★ 精選</span>' : '<span></span>'}
+            <span class="badge-cluster">${esc(article.topicCluster)}</span>
+          </div>
         </div>
-
-        <!-- 卡片文字 -->
         <div class="card-body">
-          <time class="card-date" datetime="${esc(article.postDate)}">${esc(date)}</time>
-          <h2 class="card-title">${esc(article.title)}</h2>
+          <div class="card-date"><span class="icon">🗓</span><span>${esc(article.postDate || '')}</span></div>
+          <h2 class="card-title"><strong>${esc(article.title)}</strong></h2>
           <p class="card-summary">${esc(article.shortSummary)}</p>
-        </div>
-
-        <!-- 底部操作列 -->
-        <div class="card-footer">
-          <span class="card-cta" aria-hidden="true">
-            查看詳細資訊
-            <span class="card-cta-arrow">→</span>
-          </span>
+          <div class="card-footer">
+            <div class="card-tags">${tagPreview}</div>
+            <span class="card-cta">閱讀更多 <span aria-hidden="true">→</span></span>
+          </div>
         </div>
       `;
 
-      /* 點擊卡片 → 開啟 Modal */
-      el.addEventListener('click', () => openModal(article));
-
-      /* 鍵盤 Enter / Space → 開啟 Modal（無障礙支援） */
-      el.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
+      node.addEventListener('click', () => openModal(article));
+      node.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
           openModal(article);
         }
       });
 
-      return el;
+      return node;
     }
 
-
-    /* ──────────────────────────────────────────────────────
-       openModal(article)
-       填充 modal 內容並開啟
-
-       【擴充點】
-       若日後需要在 modal 底部加入「延伸閱讀」，
-       在此函式末尾呼叫 renderRelated(article) 即可，
-       不需動 modal HTML 結構。
-       ────────────────────────────────────────────────────── */
     function openModal(article) {
-      const imgSrc = article.imageUrl || CONFIG.FALLBACK_IMG;
+      State.selectedArticle = article;
+      const imageUrl = article.imageUrl || CONFIG.FALLBACK_IMG;
 
-      /* ── 填充各欄位 ── */
-      DOM.modalImg.src = imgSrc;
-      DOM.modalImg.alt = `${article.title || ''} 封面圖`;
+      DOM.modalImage.src = imageUrl;
+      DOM.modalImage.alt = `${article.title} 封面圖`;
+      DOM.modalImage.referrerPolicy = 'no-referrer';
+      DOM.modalImage.onerror = () => { DOM.modalImage.src = CONFIG.FALLBACK_IMG; };
 
-      /* 日期 */
-      DOM.modalDate.textContent = fmtDate(article.postDate);
-      DOM.modalDate.setAttribute('datetime', article.postDate || '');
-
-      /* 精選徽章 */
-      setHidden(DOM.modalFeat, !article.featured);
-
-      /* 分類 */
-      DOM.modalCluster.textContent = article.topicCluster || '其他';
-
-      /* 標題 */
       DOM.modalTitle.textContent = article.title || '';
-
-      /* 導讀摘要：優先用 longSummary，fallback 到 shortSummary */
+      DOM.modalCluster.textContent = article.topicCluster || '其他';
+      DOM.modalDate.textContent = `🗓 ${formatDate(article.postDate)}`;
       DOM.modalSummary.textContent = article.longSummary || article.shortSummary || '';
 
-      /* 適合對象 */
-      if (article.audience) {
-        DOM.modalAud.innerHTML = `📌 適合對象：<strong>${esc(article.audience)}</strong>`;
-        setHidden(DOM.modalAud, false);
+      if (article.featured) {
+        setHidden(DOM.modalFeatured, false);
       } else {
-        setHidden(DOM.modalAud, true);
+        setHidden(DOM.modalFeatured, true);
       }
 
-      /* Tags */
+      DOM.modalAudience.innerHTML = '';
+      if (article.audience) {
+        DOM.modalAudience.innerHTML = `📌 適合對象：<strong>${esc(article.audience)}</strong>`;
+        setHidden(DOM.modalAudience, false);
+      } else {
+        setHidden(DOM.modalAudience, true);
+      }
+
       DOM.modalTags.innerHTML = '';
       const tags = Array.isArray(article.tags) ? article.tags : [];
-      if (tags.length > 0) {
-        const frag = document.createDocumentFragment();
+      if (tags.length) {
+        const fragment = document.createDocumentFragment();
         tags.forEach(tag => {
           const span = document.createElement('span');
           span.className = 'tag';
           span.textContent = `# ${tag}`;
-          frag.appendChild(span);
+          fragment.appendChild(span);
         });
-        DOM.modalTags.appendChild(frag);
+        DOM.modalTags.appendChild(fragment);
+      } else {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = '# 無標籤';
+        DOM.modalTags.appendChild(span);
       }
 
-      /* 全文連結 */
       DOM.modalLink.href = article.url || '#';
-
-      /* ── 開啟動畫 ── */
       DOM.modalOverlay.classList.add('is-open');
       DOM.modalOverlay.setAttribute('aria-hidden', 'false');
       document.body.classList.add('no-scroll');
-
-      /* 捲動回頂部（用戶上次瀏覽可能已向下） */
       DOM.modalDialog.scrollTop = 0;
-
-      /* 焦點移到對話框（無障礙） */
       requestAnimationFrame(() => DOM.btnClose.focus());
     }
 
-
-    /* ──────────────────────────────────────────────────────
-       closeModal()
-       ────────────────────────────────────────────────────── */
     function closeModal() {
       DOM.modalOverlay.classList.remove('is-open');
       DOM.modalOverlay.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('no-scroll');
+      State.selectedArticle = null;
     }
 
-
-    /* ──────────────────────────────────────────────────────
-       事件綁定
-       ────────────────────────────────────────────────────── */
-
-    /* Modal 關閉按鈕 */
-    DOM.btnClose.addEventListener('click', closeModal);
-
-    /* 點擊遮罩（對話框外側）關閉 */
-    DOM.modalOverlay.addEventListener('click', e => {
-      if (e.target === DOM.modalOverlay) closeModal();
+    let searchTimer = null;
+    DOM.searchInput.addEventListener('input', event => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        State.searchKeyword = event.target.value || '';
+        applyFilters();
+      }, 220);
     });
 
-    /* ESC 鍵關閉 */
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && DOM.modalOverlay.classList.contains('is-open')) {
+    DOM.btnRetry.addEventListener('click', loadData);
+    DOM.btnResetInline.addEventListener('click', resetFilters);
+    DOM.btnResetEmpty.addEventListener('click', resetFilters);
+    DOM.btnClose.addEventListener('click', closeModal);
+    DOM.btnCloseSecondary.addEventListener('click', closeModal);
+
+    DOM.modalOverlay.addEventListener('click', event => {
+      if (event.target === DOM.modalOverlay) {
         closeModal();
       }
     });
 
-    /* 重新載入按鈕 */
-    DOM.btnRetry.addEventListener('click', loadData);
-
-    /*
-     * 搜尋輸入（防抖 300ms，避免每次按鍵都觸發篩選）
-     * 【擴充點】搜尋邏輯在 applyFilters() 內，
-     * 未來可在此改成即時搜尋（去掉 debounce）或加入 IME 支援。
-     */
-    let searchTimer = null;
-    DOM.searchInput.addEventListener('input', e => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        State.searchKeyword = e.target.value;
-        applyFilters();
-      }, 300);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && DOM.modalOverlay.classList.contains('is-open')) {
+        closeModal();
+      }
     });
 
-
-    /* ──────────────────────────────────────────────────────
-       ★ 應用程式啟動
-       ────────────────────────────────────────────────────── */
     loadData();
-
   </script>
-
 </body>
 </html>
