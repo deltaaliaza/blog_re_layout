@@ -147,6 +147,23 @@
       "note": ""
     },
     {
+      "id": "nycu-lib-2026-004",
+      "title": "你不是要先變工程師，才能用 AI 做研究",
+      "url": "https://news.lib.nycu.edu.tw/researches/research-methods/%e4%bd%a0%e4%b8%8d%e6%98%af%e8%a6%81%e5%85%88%e8%ae%8a%e5%b7%a5%e7%a8%8b%e5%b8%ab%ef%bc%8c%e6%89%8d%e8%83%bd%e7%94%a8-ai-%e5%81%9a%e7%a0%94%e7%a9%b6/",
+      "postDate": "2026-04-13",
+      "imageUrl": "https://news.lib.nycu.edu.tw/wp-content/uploads/2026/04/%E5%85%A7%E6%96%87%E7%94%A8.png",
+      "shortSummary": "這篇文章從人文社會科學研究的角度出發，討論研究者不必先成為工程師，也能在清楚分工與可驗證的前提下，把 AI 納入研究流程。",
+      "longSummary": "本文不是單純介紹某個 AI 工具，而是把焦點放在研究流程如何重新設計。文章以一篇方法論實驗為核心，說明 AI Agent 可以如何參與研究規劃、文獻蒐集、分析、寫作與文獻管理等七個階段，同時強調真正不能外包的仍是研究問題設定、理論詮釋、脈絡判斷與倫理反思。對剛接觸 AI 協作的讀者而言，這篇文章的價值不在於鼓吹全面交給 AI，而在於幫助你理解：哪些工作可以借力，哪些判斷必須自己把關。",
+      "topicCluster": "研究方法",
+      "tags": ["AI", "研究方法", "AI Agent", "人機協作", "論文寫作", "人文社會科學"],
+      "audience": "研究生與高年級學生",
+      "display": true,
+      "featured": true,
+      "lastReviewed": "2026-04-14",
+      "updatedAt": "2026-04-14T09:00:00+08:00",
+      "note": ""
+    },
+    {
       "id": "nycu-lib-2025-009",
       "title": "【草稿】display=false 測試用，不應顯示於前端",
       "url": "https://news.lib.nycu.edu.tw/2025/12/draft-test/",
