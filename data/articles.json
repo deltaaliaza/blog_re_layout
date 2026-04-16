@@ -3,8 +3,8 @@
     "schema_version": "1.2.0",
     "description": "國立陽明交通大學圖書館 BLOG 文章彙整資料",
     "source_url": "https://news.lib.nycu.edu.tw/",
-    "topic_clusters": ["AI研究工具", "學術資源", "研究方法", "圖書館服務", "其他"],
-    "audience_list": ["大學部學生", "新手研究生", "資深研究者", "一般教職員", "全體讀者"],
+    "topic_clusters": ["投稿相關", "AI研究工具", "學術資源", "研究方法", "圖書館服務", "其他"],
+    "audience_list": ["大學部學生", "新手研究生", "資深研究者", "一般教職員"],
     "notes": "topicCluster 現支援字串或陣列格式；audience 請使用 audience_list 中的固定值"
   },
   "articles": [
