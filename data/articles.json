@@ -50,7 +50,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
       "shortSummary": "從 Web of Science、Scopus 到華藝中文，一篇寫給大學新生的資料庫入門導覽，帶你開啟學術資源大門。",
       "longSummary": "對許多大一新生而言，「圖書館資料庫」是一個陌生又令人望而卻步的名詞。本文以圖解方式介紹陽明交大圖書館提供的主要資料庫，包含理工科常用的 Web of Science 與 Scopus、人文社科的 JSTOR，以及中文學術資源華藝線上圖書館。文末附有各資料庫適用情境對照表，讀完你就能依自己的研究需求選擇最合適的工具。",
-      "topicCluster": ["學術資源"],
+      "topicCluster": ["學術資源","投稿相關"],
       "tags": ["資料庫", "Web of Science", "Scopus", "JSTOR", "華藝"],
       "audience": "全體讀者",
       "display": true,
