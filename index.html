@@ -630,10 +630,10 @@
         <!-- filter-btn 由 buildClusterFilters() 動態插入 -->
       </div>
 
-      <!-- 對象篩選（青色系）— 使用 CONFIG.AUDIENCE_LIST 固定清單 -->
+      <!-- 對象篩選（青色系）— 依 JSON _meta.audience_list 動態生成 -->
       <div class="filter-row" id="filter-row-audience" role="group" aria-label="依讀者對象篩選">
         <span class="filter-label">對象：</span>
-        <!-- audience-btn 由 buildAudienceFilters() 動態插入 -->
+        <!-- audience-btn 由 buildAudienceFilters() 依 JSON _meta.audience_list 動態插入 -->
       </div>
 
     </div>
@@ -737,14 +737,14 @@
        JavaScript 主程式  v3.0
 
        【程式架構索引】
-         CONFIG            — 全域設定（DATA_URL / FALLBACK_IMG / CLUSTER_ORDER / AUDIENCE_LIST）
-         State             — 應用程式狀態（allArticles / filteredArticles / activeCluster / activeAudience / searchKeyword）
+         CONFIG            — 全域設定（DATA_URL / FALLBACK_IMG）
+         State             — 應用程式狀態（含由 JSON _meta 注入的 clusterOrder / audienceList）
          DOM               — DOM 元素快取
-         Utils             — 工具函式（fmtDate / esc / setHidden / getClusters / getAudience）
+         Utils             — 工具函式（fmtDate / esc / setHidden / normalizeStringList / getClusters / getAudience / getTags）
          showState()       — 切換 loading/error/empty/grid 顯示
          loadData()        — fetch JSON
-         buildClusterFilters() — 依資料動態生成「分類」篩選按鈕（藍色）
-         buildAudienceFilters()— 依 CONFIG.AUDIENCE_LIST 生成「對象」篩選按鈕（青色）
+         buildClusterFilters() — 依 JSON _meta.topic_clusters 建立「分類」篩選按鈕（藍色）
+         buildAudienceFilters()— 依 JSON _meta.audience_list 生成「對象」篩選按鈕（青色）
          applyFilters()    — ★ 三重篩選（分類 × 對象 × 搜尋）
          renderGrid()      — 渲染卡片格線
          createCard()      — 建立單張卡片（含多分類 chips + 對象 chip）
@@ -769,16 +769,6 @@
     const CONFIG = {
       DATA_URL: './data/articles.json',
       FALLBACK_IMG: 'https://placehold.co/800x450/e8edf8/1a3472?text=NYCU+Library',
-
-      /** topicCluster 篩選按鈕排序（只顯示資料中實際存在的分類） */
-      CLUSTER_ORDER: ["投稿相關", "AI研究工具", "學術資源", "研究方法", "圖書館服務", "其他"],
-
-      /**
-       * ★ audience 五種固定值（對應截圖中的「交大學術生態圈」模板）
-       *   '全部' 會自動加在最前面，不需列在這裡。
-       *   JSON 中 audience 欄位請使用以下值之一。
-       */
-      AUDIENCE_LIST: ['大學部學生', '新手研究生', '資深研究者', '一般教職員','全體讀者'],
     };
 
     /* ────────────────────────────────────────────────
@@ -790,6 +780,8 @@
       activeCluster:    '全部', // 當前分類篩選（'全部' 或某個 cluster）
       activeAudience:   '全部', // 當前對象篩選（'全部' 或某個 audience）
       searchKeyword:    '',     // 當前搜尋關鍵字
+      clusterOrder:     [],     // 由 JSON _meta.topic_clusters 注入並正規化後的清單
+      audienceList:     [],     // 由 JSON _meta.audience_list 注入並正規化後的清單
     };
 
     /* ────────────────────────────────────────────────
@@ -831,8 +823,14 @@
     /** YYYY-MM-DD → YYYY 年 M 月 D 日 */
     function fmtDate(s) {
       if (!s) return '日期不詳';
-      const [y,m,d] = s.split('-');
-      return `${y} 年 ${parseInt(m)} 月 ${parseInt(d)} 日`;
+      const parts = String(s).split('-');
+      if (parts.length < 3) return String(s);
+      const [y, m, d] = parts;
+      const year  = String(y).trim();
+      const month = parseInt(m, 10);
+      const day   = parseInt(d, 10);
+      if (!year || Number.isNaN(month) || Number.isNaN(day)) return String(s);
+      return `${year} 年 ${month} 月 ${day} 日`;
     }
 
     /** HTML 跳脫（XSS 防護） */
@@ -846,18 +844,31 @@
     /** 切換 hidden class */
     function setHidden(el, hide) { el.classList.toggle('hidden', hide); }
 
+    /** 將輸入正規化為去空白、去重後的字串陣列（保留原順序） */
+    function normalizeStringList(input) {
+      const arr = Array.isArray(input) ? input : [input];
+      const seen = new Set();
+      return arr
+        .map(v => typeof v === 'string' ? v.trim() : '')
+        .filter(Boolean)
+        .filter(v => {
+          if (seen.has(v)) return false;
+          seen.add(v);
+          return true;
+        });
+    }
+
     /**
      * ★ getClusters(article) — 統一取得分類陣列
      *   topicCluster 可能是：
-     *     · string  → ["AI研究工具"]
-     *     · string[] → 原樣
-     *     · undefined/null → ["其他"]
+     *     · string   → ["AI研究工具"]
+     *     · string[] → 正規化後陣列
+     *     · undefined/null/空值 → ["其他"]
      */
     function getClusters(article) {
-      const c = article.topicCluster;
-      if (!c) return ['其他'];
-      if (Array.isArray(c)) return c.length > 0 ? c : ['其他'];
-      return [c];
+      const raw = article ? article.topicCluster : null;
+      const list = normalizeStringList(Array.isArray(raw) ? raw : [raw]);
+      return list.length > 0 ? list : ['其他'];
     }
 
     /**
@@ -865,7 +876,60 @@
      *   audience 為單一字串，若為空則回傳 '全體讀者'
      */
     function getAudience(article) {
-      return (article.audience && article.audience.trim()) ? article.audience.trim() : '全體讀者';
+      const audience = article && typeof article.audience === 'string'
+        ? article.audience.trim()
+        : '';
+      return audience || '全體讀者';
+    }
+
+    /** 取得文章 tags（保證回傳字串陣列） */
+    function getTags(article) {
+      return normalizeStringList(Array.isArray(article?.tags) ? article.tags : []);
+    }
+
+    /** 取得資料中實際使用的分類清單 */
+    function getUsedClusters(articles = State.allArticles) {
+      return [...new Set(articles.flatMap(a => getClusters(a)))];
+    }
+
+    /** 取得資料中實際使用的對象清單 */
+    function getUsedAudiences(articles = State.allArticles) {
+      return [...new Set(articles.map(a => getAudience(a)))];
+    }
+
+    /**
+     * syncFilterConfigFromMeta(meta)
+     * 將 JSON _meta.topic_clusters / audience_list 正規化後寫入 State，
+     * 並補上資料中存在但 _meta 未列出的值，避免篩選 UI 與資料脫鉤。
+     */
+    function syncFilterConfigFromMeta(meta = {}) {
+      const metaClusters  = normalizeStringList(meta.topic_clusters || []);
+      const usedClusters  = getUsedClusters(State.allArticles);
+      const orderedClusters = metaClusters.filter(c => usedClusters.includes(c));
+      const extraClusters   = usedClusters.filter(c => !metaClusters.includes(c));
+      State.clusterOrder = [...orderedClusters, ...extraClusters];
+
+      if (State.clusterOrder.length === 0) {
+        State.clusterOrder = usedClusters;
+      }
+
+      const metaAudiences = normalizeStringList(meta.audience_list || []);
+      const usedAudiences = getUsedAudiences(State.allArticles);
+
+      // audience 保留 _meta 定義的 UI 順序，同時補上資料中存在但未列入 _meta 的值
+      State.audienceList = metaAudiences.length > 0 ? [...metaAudiences] : [...usedAudiences];
+      usedAudiences.forEach(aud => {
+        if (!State.audienceList.includes(aud)) {
+          State.audienceList.push(aud);
+        }
+      });
+
+      if (State.activeCluster !== '全部' && !State.clusterOrder.includes(State.activeCluster)) {
+        State.activeCluster = '全部';
+      }
+      if (State.activeAudience !== '全部' && !State.audienceList.includes(State.activeAudience)) {
+        State.activeAudience = '全部';
+      }
     }
 
     /* ────────────────────────────────────────────────
@@ -886,10 +950,12 @@
       try {
         const res = await fetch(CONFIG.DATA_URL, { cache: 'no-cache' });
         if (!res.ok) throw new Error(`HTTP ${res.status}：${res.statusText}`);
+
         const json = await res.json();
         if (!json || !Array.isArray(json.articles)) {
           throw new Error('JSON 格式錯誤：找不到 articles 陣列');
         }
+
         State.allArticles = json.articles
           .filter(a => a.display === true)
           .sort((a, b) => {
@@ -897,6 +963,8 @@
             if (!a.featured && b.featured) return 1;
             return (b.postDate || '').localeCompare(a.postDate || '');
           });
+
+        syncFilterConfigFromMeta(json._meta || {});
         buildClusterFilters();
         buildAudienceFilters();
         applyFilters();
@@ -909,28 +977,18 @@
 
     /* ────────────────────────────────────────────────
        buildClusterFilters()
-       依資料中實際出現的 topicCluster，
-       按 CONFIG.CLUSTER_ORDER 順序生成「分類」篩選按鈕（藍色）。
-
-       ★ 因為 topicCluster 現在是陣列，
-         「實際存在的分類」需要 flatMap 展開後去重。
+       依 JSON _meta.topic_clusters 的順序建立「分類」篩選按鈕，
+       但仍只顯示資料中實際存在的分類，避免 UI 出現無效分類。
        ──────────────────────────────────────────────── */
     function buildClusterFilters() {
-      // 清除舊按鈕（保留 .filter-label）
       DOM.filterRowCluster.querySelectorAll('.filter-btn').forEach(b => b.remove());
 
-      // 展開所有文章的 topicCluster 陣列，去重，按 CONFIG 排序
-      const allClusters = new Set(
-        State.allArticles.flatMap(a => getClusters(a))
-      );
-      const usedClusters = CONFIG.CLUSTER_ORDER.filter(c => allClusters.has(c));
-
-      ['全部', ...usedClusters].forEach(cluster => {
+      ['全部', ...State.clusterOrder].forEach(cluster => {
         const btn = document.createElement('button');
         btn.className = 'filter-btn';
         btn.textContent = cluster;
         btn.dataset.cluster = cluster;
-        btn.setAttribute('aria-pressed', cluster === '全部' ? 'true' : 'false');
+        btn.setAttribute('aria-pressed', cluster === State.activeCluster ? 'true' : 'false');
         btn.addEventListener('click', () => {
           State.activeCluster = cluster;
           applyFilters();
@@ -941,18 +999,18 @@
 
     /* ────────────────────────────────────────────────
        buildAudienceFilters()
-       依 CONFIG.AUDIENCE_LIST 固定清單生成「對象」篩選按鈕（青色）。
-       不像分類篩選那樣依資料動態生成，對象是固定的五種值。
+       依 JSON _meta.audience_list 生成「對象」篩選按鈕（青色），
+       並補上資料中存在但 _meta 未列出的值，避免文章成為孤島資料。
        ──────────────────────────────────────────────── */
     function buildAudienceFilters() {
       DOM.filterRowAud.querySelectorAll('.audience-btn').forEach(b => b.remove());
 
-      ['全部', ...CONFIG.AUDIENCE_LIST].forEach(aud => {
+      ['全部', ...State.audienceList].forEach(aud => {
         const btn = document.createElement('button');
         btn.className = 'audience-btn';
         btn.textContent = aud;
         btn.dataset.audience = aud;
-        btn.setAttribute('aria-pressed', aud === '全部' ? 'true' : 'false');
+        btn.setAttribute('aria-pressed', aud === State.activeAudience ? 'true' : 'false');
         btn.addEventListener('click', () => {
           State.activeAudience = aud;
           applyFilters();
@@ -977,39 +1035,34 @@
       const audience = State.activeAudience;
       const kw = State.searchKeyword.trim().toLowerCase();
 
-      // ── 更新分類按鈕 active 狀態 ──
       DOM.filterRowCluster.querySelectorAll('.filter-btn').forEach(btn => {
         btn.setAttribute('aria-pressed', btn.dataset.cluster === cluster ? 'true' : 'false');
       });
-      // ── 更新對象按鈕 active 狀態 ──
       DOM.filterRowAud.querySelectorAll('.audience-btn').forEach(btn => {
         btn.setAttribute('aria-pressed', btn.dataset.audience === audience ? 'true' : 'false');
       });
 
       let result = [...State.allArticles];
 
-      // 步驟 1：分類篩選（陣列包含比對）
       if (cluster !== '全部') {
         result = result.filter(a => getClusters(a).includes(cluster));
       }
 
-      // 步驟 2：對象篩選（字串完全比對）
       if (audience !== '全部') {
         result = result.filter(a => getAudience(a) === audience);
       }
 
-      // 步驟 3：關鍵字搜尋（比對 title / shortSummary / tags）
       if (kw) {
-        result = result.filter(a =>
-          (a.title || '').toLowerCase().includes(kw) ||
-          (a.shortSummary || '').toLowerCase().includes(kw) ||
-          (a.tags || []).some(t => t.toLowerCase().includes(kw))
-        );
+        result = result.filter(a => {
+          const tags = getTags(a);
+          return (a.title || '').toLowerCase().includes(kw) ||
+            (a.shortSummary || '').toLowerCase().includes(kw) ||
+            (a.longSummary || '').toLowerCase().includes(kw) ||
+            tags.some(t => t.toLowerCase().includes(kw));
+        });
       }
 
       State.filteredArticles = result;
-
-      // ── 計數更新（含篩選提示）──
       updateCountBadge(result.length, cluster, audience, kw);
 
       if (result.length === 0) {
@@ -1060,7 +1113,7 @@
       el.className = 'card';
       el.setAttribute('role', 'listitem');
       el.setAttribute('tabindex', '0');
-      el.setAttribute('aria-label', `文章：${esc(article.title)}`);
+      el.setAttribute('aria-label', `文章：${article.title || ''}`);
       el.style.setProperty('--delay', `${idx * 50}ms`);
 
       // 多分類 chips HTML
@@ -1158,7 +1211,7 @@
       if (audience) {
         const audChip = document.createElement('span');
         audChip.className = 'modal-audience-chip';
-        audChip.innerHTML = `👤 ${esc(audience)}`;
+        audChip.textContent = `👤 ${audience}`;
         metaFrag.appendChild(audChip);
       }
 
@@ -1167,7 +1220,7 @@
 
       // ── Tags ──
       DOM.modalTags.innerHTML = '';
-      (article.tags || []).forEach(tag => {
+      getTags(article).forEach(tag => {
         const span = document.createElement('span');
         span.className = 'tag';
         span.textContent = `# ${tag}`;
@@ -1269,6 +1322,7 @@
        resetFilters() — ★ v3.0：同時重置三個條件
        ──────────────────────────────────────────────── */
     function resetFilters() {
+      clearTimeout(searchTimer);
       State.activeCluster  = '全部';
       State.activeAudience = '全部';
       State.searchKeyword  = '';
